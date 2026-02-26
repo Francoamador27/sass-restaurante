@@ -11,7 +11,7 @@ const MyAccount = () => {
     const [tab, setTab] = useState('datos');
 
     return (
-        <div className="max-w-4xl mx-auto p-6 bg-[#fefbf5] min-h-screen">
+        <div className="max-w-4xl mt-20 mx-auto p-6 bg-[#fefbf5] min-h-screen">
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-3xl font-bold text-[#008DD2]">Mi Cuenta</h1>
                 {user?.admin && (

@@ -2,45 +2,29 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import clienteAxios from "../../config/axios";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation, Pagination, Autoplay, FreeMode } from "swiper/modules";
+import { Navigation, Pagination, Autoplay } from "swiper/modules";
+import Lightbox from "yet-another-react-lightbox";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
-import "swiper/css/free-mode";
+import "yet-another-react-lightbox/styles.css";
 import SEOHead from "../Head/Head";
 
-const ACCENT = "#8cb9ce";
+const ACCENT = "#0099cc";
 const isImageUrl = (url = "") =>
   /\.(jpe?g|png|webp|gif|bmp|svg)(\?.*)?$/i.test(url || "");
 
-const HeroSkeleton = () => (
-  <div className="rounded-2xl border border-gray-200 bg-white">
-    <div className="animate-pulse p-6">
-      <div className="h-6 w-64 rounded bg-gray-200 mb-3" />
-      <div className="h-10 w-96 rounded bg-gray-200 mb-4" />
-      <div className="aspect-video w-full rounded-xl bg-gray-200" />
-    </div>
-  </div>
-);
-
-const CardSkeleton = () => (
-  <div className="h-full">
-    <div className="relative h-full min-h-[220px] rounded-2xl border border-gray-200 bg-white p-4 overflow-hidden">
-      <div className="animate-pulse">
-        <div className="aspect-video w-full rounded-xl bg-gray-200" />
-      </div>
-    </div>
-  </div>
-);
-
 export default function ServiciosShow() {
-  const token = localStorage.getItem("AUTH_TOKEN");
   const { slug, idOrSlug, id } = useParams();
   const param = slug || idOrSlug || id;
 
   const [servicio, setServicio] = useState(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  const token = localStorage.getItem("AUTH_TOKEN");
 
   useEffect(() => {
     const fetchServicio = async () => {
@@ -48,13 +32,12 @@ export default function ServiciosShow() {
       setLoading(true);
       setErr(null);
       try {
-        const { data } = await clienteAxios.get(
-          `/api/servicios/${encodeURIComponent(param)}`,
-          { headers: token ? { Authorization: `Bearer ${token}` } : {} }
-        );
-        setServicio(data?.data ?? null);
+        const { data } = await clienteAxios.get(`/api/servicios/${encodeURIComponent(param)}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        setServicio(data?.data ?? data ?? null);
       } catch (e) {
-        console.error("Error cargando servicio", e);
+        console.error("Error cargando servicio:", e);
         setErr("No se pudo cargar el servicio.");
       } finally {
         setLoading(false);
@@ -63,21 +46,10 @@ export default function ServiciosShow() {
     fetchServicio();
   }, [param, token]);
 
-  useEffect(() => {
-    if (servicio?.title) {
-      document.title = `${servicio.title} • Servicios`;
-    }
-  }, [servicio]);
-
   const tags = useMemo(() => {
     const t = servicio?.tags;
     if (Array.isArray(t)) return t;
-    if (typeof t === "string") {
-      return t
-        .split(",")
-        .map((x) => x.trim())
-        .filter(Boolean);
-    }
+    if (typeof t === "string") return t.split(",").map((x) => x.trim()).filter(Boolean);
     return [];
   }, [servicio]);
 
@@ -96,408 +68,229 @@ export default function ServiciosShow() {
   }, [servicio]);
 
   const gallery = useMemo(() => {
-    if (Array.isArray(servicio?.gallery_urls) && servicio.gallery_urls.length) {
-      return servicio.gallery_urls;
-    }
-    if (Array.isArray(servicio?.gallery)) {
-      return servicio.gallery.map((g) =>
-        g?.startsWith("http")
-          ? g
-          : `${window.location.origin}/${g.replace(/^\/+/, "")}`
-      );
-    }
-    return [];
-  }, [servicio]);
+    if (!servicio) return [];
 
-  const mainHero =
-    servicio?.mainImage_url ||
-    servicio?.image_url ||
-    (isImageUrl(servicio?.image) ? servicio?.image : null);
+    const mainImg = servicio.mainImage_url || servicio.image_url || null;
+    const galleryImgs = Array.isArray(servicio.gallery_urls)
+      ? servicio.gallery_urls
+      : [];
 
-  const slides = useMemo(() => {
-    const arr = [];
-    if (mainHero) arr.push(mainHero);
-    (gallery || []).forEach((g) => {
-      if (g && !arr.includes(g)) arr.push(g);
+    let merged = [];
+
+    // 1️⃣ Si hay imagen principal → la ponemos primera
+    if (mainImg) {
+      merged.push(mainImg);
+    }
+
+    // 2️⃣ Agregamos el resto evitando duplicados
+    galleryImgs.forEach((img) => {
+      if (img !== mainImg) merged.push(img);
     });
-    return arr;
-  }, [mainHero, gallery]);
 
-  const extraSlides = slides.slice(1);
-
-  // 💡 Descripción (acepta `description` o `descripcion`)
-  const descripcion = useMemo(() => {
-    const d = servicio?.description ?? servicio?.descripcion ?? "";
-    return (typeof d === "string" ? d.trim() : "") || "";
+    return merged;
   }, [servicio]);
+
+
+  const descripcion =
+    servicio?.description ?? servicio?.descripcion ?? "Sin descripción disponible";
+
+  // 📹 Video del módulo (si el backend lo provee)
+  const rawVideo = servicio?.video || null;
+
+  // Si viene una URL normal de YouTube, la convertimos a embed
+  let videoUrl = null;
+
+  if (rawVideo) {
+    const yid = rawVideo.match(
+      /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/
+    );
+    if (yid && yid[7]?.length === 11) {
+      videoUrl = `https://www.youtube.com/embed/${yid[7]}`;
+    }
+  }
+
+  // SEO schema enriquecido
+  const jsonLdSchema = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: servicio?.title || "Módulo DentalCor",
+    applicationCategory: "MedicalSoftware",
+    operatingSystem: "Web",
+    offers: {
+      "@type": "Offer",
+      price: "0",
+      priceCurrency: "USD",
+    },
+    featureList: features.map((f) => (typeof f === "string" ? f : f.title)),
+    description: descripcion,
+    image: gallery?.[0],
+    video: videoUrl,
+  };
 
   return (
-    <section className="bg-white text-gray-800">
-<SEOHead
-  title={`${servicio?.title || "Servicios"} | Servicios odontológicos`}
-  description={servicio?.description || "Descubrí nuestros servicios odontológicos."}
-/>
+    <section className="relative bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-900 overflow-hidden">
+      <SEOHead
+        priority="high"
+        title={`${servicio?.title || "Módulo"} | DentalCor Software Odontológico`}
+        description={`Explorá el módulo ${servicio?.title || ""} del sistema DentalCor: software odontológico de gestión moderna.`}
+        keywords={`software odontológico, dentalcor, ${servicio?.title}, clínica dental, odontología digital`}
+      />
 
-      {/* Contenedor principal (breadcrumbs + título) */}
-      <div className="mx-auto max-w-7xl px-6 pt-10">
-        <nav className="mb-4 text-sm">
-          <Link to="/" className="hover:underline" style={{ color: ACCENT }}>
-            Inicio
-          </Link>
-          <span className="mx-2 text-gray-400">/</span>
-          <Link to="/servicios" className="hover:underline" style={{ color: ACCENT }}>
-            Servicios
-          </Link>
-          {servicio?.title && (
-            <>
-              <span className="mx-2 text-gray-400">/</span>
-              <span className="text-gray-700">{servicio.title}</span>
-            </>
-          )}
+      {/* Fondo 3D */}
+      <div className="absolute inset-0 -z-10">
+        <div className="absolute top-[-200px] right-[-200px] w-[600px] h-[600px] bg-gradient-to-br from-blue-400/30 to-cyan-300/20 blur-3xl rounded-full"></div>
+        <div className="absolute bottom-[-200px] left-[-200px] w-[500px] h-[500px] bg-gradient-to-tr from-emerald-300/20 to-blue-300/10 blur-3xl rounded-full"></div>
+      </div>
+
+      {/* Header */}
+      <div className="max-w-7xl mx-auto px-6 pt-16">
+        <nav className="text-sm text-slate-600 mb-4 flex items-center gap-2">
+          <Link to="/" className="hover:text-blue-600 transition">Inicio</Link> /
+          <Link to="/servicios" className="hover:text-blue-600 transition"> Módulos</Link>
+          {servicio?.title && <span className="text-slate-800 font-semibold"> / {servicio.title}</span>}
         </nav>
 
-        {loading ? (
-          <HeroSkeleton />
-        ) : err ? (
-          <div className="rounded-2xl border border-red-200 bg-red-50 p-6 mb-10">
-            <h2 className="text-xl font-semibold text-red-700">Error</h2>
-            <p className="text-red-600 mt-2">{err}</p>
-            <div className="mt-4">
-              <Link
-                to="/servicios"
-                className="inline-flex items-center gap-2 rounded-xl px-4 py-2"
-                style={{ backgroundColor: ACCENT, color: "white" }}
-              >
-                ← Volver a servicios
-              </Link>
-            </div>
+        <h1 className="text-4xl px-8 md:text-5xl font-extrabold tracking-tight leading-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-700 via-cyan-600 to-emerald-500 drop-shadow-sm mb-8">
+          {servicio?.title || (loading ? "Cargando..." : "No encontrado")}
+        </h1>
+
+        {err && (
+          <div className="rounded-2xl border border-red-200 bg-red-50 p-6 mb-10 text-red-700 font-medium">
+            {err}
           </div>
-        ) : !servicio ? (
-          <div className="rounded-2xl border border-gray-200 bg-white p-6 mb-10">
-            <h2 className="text-xl font-semibold">No encontrado</h2>
-            <p className="text-gray-600 mt-2">El servicio solicitado no existe.</p>
-            <div className="mt-4">
-              <Link
-                to="/servicios"
-                className="inline-flex items-center gap-2 rounded-xl px-4 py-2"
-                style={{ backgroundColor: ACCENT, color: "white" }}
-              >
-                ← Volver a servicios
-              </Link>
-            </div>
-          </div>
-        ) : (
-          <>
-            {/* Título justo debajo de las migas */}
-            <h1
-              className="text-3xl md:text-4xl font-extrabold tracking-tight leading-tight mb-6"
-              style={{ color: ACCENT }}
-            >
-              {servicio.title}
-            </h1>
-          </>
         )}
       </div>
 
-      {/* 🔒 Galería: NO tocada (queda tal cual) */}
-      {!loading && servicio && (
-        <div className="mx-auto max-w-7xl px-6 mb-10">
-          <div className="rounded-2xl overflow-hidden border border-gray-200 shadow-sm bg-white">
-            {slides.length === 0 ? (
-              <div className="h-[400px] flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
-                <div className="text-center">
-                  <svg
-                    className="mx-auto h-16 w-16 text-gray-300 mb-3"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
+      {/* 🖼️ Galería Swiper */}
+      {!loading && servicio && gallery.length > 0 && (
+        <div className="max-w-6xl mx-auto px-6 mb-14">
+          <div className="relative z-10">
+            <h2 className="text-2xl font-bold mb-4 text-blue-700">Descripción</h2>
+            <p className="text-lg leading-relaxed text-slate-700 whitespace-pre-line mb-4">
+              {descripcion}
+            </p>
+            {tags.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-3">
+                {tags.map((tag, i) => (
+                  <span
+                    key={i}
+                    className="px-4 py-1.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-full text-sm shadow-md"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={1.5}
-                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                    />
-                  </svg>
-                  <p className="text-gray-400 text-sm font-medium">
-                    Sin imágenes disponibles
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="relative gallery-container">
-                <Swiper
-                  modules={[Navigation, Pagination, Autoplay]}
-                  spaceBetween={0}
-                  navigation={{
-                    nextEl: ".swiper-button-next-custom",
-                    prevEl: ".swiper-button-prev-custom",
-                  }}
-                  loop={slides.length > 1}
-                  autoplay={
-                    slides.length > 1
-                      ? { delay: 4500, disableOnInteraction: false }
-                      : false
-                  }
-                  pagination={{
-                    clickable: true,
-                    dynamicBullets: true,
-                  }}
-                  className="h-[450px] md:h-[500px]"
-                >
-                  {slides.map((url, idx) => (
-                    <SwiperSlide key={`hero-${idx}`}>
-                      {isImageUrl(url) ? (
-                        <div className="h-full w-full bg-white">
-                          <img
-                            src={url}
-                            alt={`${servicio.title} ${idx === 0 ? "(principal)" : ""}`}
-                            className="h-full w-full object-contain"
-                            loading="lazy"
-                          />
-                        </div>
-                      ) : (
-                        <a
-                          href={url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="flex h-full w-full items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 hover:from-gray-100 hover:to-gray-200 transition-all duration-300"
-                        >
-                          <div className="text-center p-6">
-                            <svg
-                              className="mx-auto h-16 w-16 mb-4"
-                              style={{ color: ACCENT }}
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                              />
-                            </svg>
-                            <p className="text-sm font-medium text-gray-700 max-w-xs truncate">
-                              {url.split("/").pop()}
-                            </p>
-                            <p className="text-xs text-gray-500 mt-1">Click para abrir</p>
-                          </div>
-                        </a>
-                      )}
-                    </SwiperSlide>
-                  ))}
-                </Swiper>
-
-                {slides.length > 1 && (
-                  <>
-                    <button
-                      className="swiper-button-prev-custom absolute left-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-white/90 backdrop-blur-sm border border-gray-200 shadow-lg flex items-center justify-center transition-all duration-200 hover:bg-white hover:scale-110 group"
-                      style={{ color: ACCENT }}
-                    >
-                      <svg
-                        className="h-5 w-5 transition-transform group-hover:-translate-x-0.5"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2.5}
-                          d="M15 19l-7-7 7-7"
-                        />
-                      </svg>
-                    </button>
-                    <button
-                      className="swiper-button-next-custom absolute right-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-white/90 backdrop-blur-sm border border-gray-200 shadow-lg flex items-center justify-center transition-all duration-200 hover:bg-white hover:scale-110 group"
-                      style={{ color: ACCENT }}
-                    >
-                      <svg
-                        className="h-5 w-5 transition-transform group-hover:translate-x-0.5"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2.5}
-                          d="M9 5l7 7-7 7"
-                        />
-                      </svg>
-                    </button>
-                  </>
-                )}
+                    #{tag}
+                  </span>
+                ))}
               </div>
             )}
+          </div>
+          <h2 className="text-xl font-semibold mb-4 text-blue-700">Galería</h2>
+          <Swiper
+            modules={[Navigation, Pagination, Autoplay]}
+            navigation
+            pagination={{ clickable: true }}
+            autoplay={{ delay: 3500, disableOnInteraction: false }}
+            spaceBetween={16}
+            slidesPerView={1.2}
+            breakpoints={{
+              640: { slidesPerView: 2.2 },
+              1024: { slidesPerView: 3.2 },
+            }}
+          >
+            {gallery.map((url, i) => (
+              <SwiperSlide key={i}>
+                <div
+                  className="relative rounded-2xl overflow-hidden bg-white/70 border border-slate-100 shadow-md hover:shadow-xl hover:scale-[1.02] transition-all duration-300 cursor-pointer"
+                  onClick={() => {
+                    setActiveIndex(i);
+                    setLightboxOpen(true);
+                  }}
+                >
+                  {isImageUrl(url) ? (
+                    <img
+                      src={url}
+                      alt={`Imagen ${i + 1}`}
+                      className="object-cover w-full h-[230px] hover:brightness-110 transition-all duration-500"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="flex h-[230px] items-center justify-center text-blue-600 text-sm">
+                      Ver recurso
+                    </div>
+                  )}
+                </div>
+              </SwiperSlide>
+            ))}
+          </Swiper>
+
+          {/* Lightbox */}
+          <Lightbox
+            open={lightboxOpen}
+            close={() => setLightboxOpen(false)}
+            index={activeIndex}
+            slides={gallery.map((url) => ({ src: url }))}
+          />
+        </div>
+      )}
+
+      {/* 🧾 Descripción + Video */}
+      {!loading && servicio && (
+        <div className="max-w-6xl mx-auto px-6 pb-20">
+
+
+          {/*  Features */}
+          {features.length > 0 && (
+            <div className="bg-gradient-to-br from-white via-slate-50 to-blue-50 rounded-3xl border border-slate-200 shadow-xl p-8 mb-12">
+              <h3 className="text-2xl font-bold text-blue-700 mb-6">Características principales</h3>
+              <div className="grid md:grid-cols-2 gap-6">
+                {features.map((f, i) => {
+                  const title = typeof f === "string" ? f : f?.title;
+                  const desc = typeof f === "string" ? "" : f?.description;
+                  return (
+                    <div
+                      key={i}
+                      className="group p-6 rounded-2xl bg-white/80 border border-slate-100 hover:border-blue-300 hover:shadow-2xl transition-all hover:-translate-y-1"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="w-3 h-3 rounded-full bg-gradient-to-br from-blue-600 to-cyan-400 mt-2 shadow-inner" />
+                        <div>
+                          <h4 className="text-lg font-semibold text-slate-800 group-hover:text-blue-600 transition-colors">
+                            {title}
+                          </h4>
+                          {desc && <p className="text-slate-600 mt-1">{desc}</p>}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          {videoUrl && (
+            <div className="rounded-2xl overflow-hidden shadow-lg border border-slate-200">
+              <iframe
+                src={videoUrl}
+                title="Video explicativo"
+                className="w-full aspect-video"
+                allowFullScreen
+              />
+            </div>
+          )}
+          {/* CTA */}
+          <div className="text-center mt-16">
+            <Link
+              to="/contacto"
+              className="inline-flex items-center gap-3 bg-gradient-to-r from-blue-600 via-cyan-600 to-emerald-500 text-white font-bold px-10 py-4 rounded-2xl shadow-2xl hover:scale-105 hover:shadow-blue-500/40 transition-all"
+            >
+              🚀 Solicitar demo del sistema
+            </Link>
           </div>
         </div>
       )}
 
-      {/* Contenido bajo la galería */}
-      {!loading && servicio && (
-        <div className="mx-auto max-w-7xl px-6 py-10">
-          {/* ✅ Descripción agregada */}
-          {descripcion && (
-            <section className="rounded-2xl border border-gray-200 bg-white p-6 mb-10">
-              <h2 className="text-xl font-semibold" style={{ color: ACCENT }}>
-                Descripción
-              </h2>
-              <p className="mt-3 text-gray-700 leading-relaxed whitespace-pre-line">
-                {descripcion}
-              </p>
-            </section>
-          )}
-
-          {/* ✅ Swiper de tags (si hay) */}
-          {Array.isArray(tags) && tags.length > 0 && (
-            <section className="mb-10">
-              <h2 className="text-xl font-semibold mb-3" style={{ color: ACCENT }}>
-                Etiquetas
-              </h2>
-              <Swiper
-                modules={[FreeMode, Autoplay]}
-                slidesPerView="auto"
-                freeMode
-                spaceBetween={8}
-                loop={tags.length > 6}
-                autoplay={
-                  tags.length > 6
-                    ? { delay: 2000, disableOnInteraction: false }
-                    : false
-                }
-                className="!py-1"
-              >
-                {tags.map((t, i) => (
-                  <SwiperSlide key={`tag-${i}`} className="!w-auto">
-                    <span
-                      className="inline-block rounded-full px-3 py-1 text-sm"
-                      style={{
-                        border: `1px solid ${ACCENT}`,
-                        backgroundColor: "#f2f8fb",
-                        color: "#335764",
-                      }}
-                    >
-                      #{t}
-                    </span>
-                  </SwiperSlide>
-                ))}
-              </Swiper>
-            </section>
-          )}
-
-          {/* Características (queda igual que antes) */}
-          {features.length > 0 && (
-            <section className="rounded-2xl border border-gray-200 bg-white p-6 mb-10">
-              <h2 className="text-xl font-semibold" style={{ color: ACCENT }}>
-                Características
-              </h2>
-              <ul className="mt-4 space-y-4">
-                {features.map((f, i) => {
-                  const title = typeof f === "string" ? f : f?.title ?? "";
-                  const desc = typeof f === "string" ? "" : f?.description ?? "";
-                  if (!title && !desc) return null;
-                  return (
-                    <li
-                      key={`feature-${i}`}
-                      className="rounded-xl border border-gray-200 bg-white p-4"
-                    >
-                      <div className="flex items-start gap-3">
-                        <span
-                          className="mt-0.5 inline-block h-5 w-5 rounded-full flex-shrink-0"
-                          style={{ backgroundColor: ACCENT }}
-                          title="Detalle"
-                        />
-                        <div>
-                          {title && (
-                            <h3 className="text-base font-semibold text-gray-800">
-                              {title}
-                            </h3>
-                          )}
-                          {desc && (
-                            <p className="text-sm text-gray-600 mt-1">{desc}</p>
-                          )}
-                        </div>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            </section>
-          )}
-
-          {/* Más imágenes (queda igual que antes) */}
-          {extraSlides.length > 0 && (
-            <section className="mb-4">
-              <h2 className="text-xl font-semibold mb-4" style={{ color: ACCENT }}>
-                Más imágenes
-              </h2>
-              <Swiper
-                modules={[Navigation, Pagination, Autoplay]}
-                spaceBetween={12}
-                navigation
-                loop={extraSlides.length > 2}
-                autoplay={
-                  extraSlides.length > 2
-                    ? { delay: 4000, disableOnInteraction: false }
-                    : false
-                }
-                pagination={{ clickable: true }}
-                breakpoints={{
-                  0: { slidesPerView: 1 },
-                  640: { slidesPerView: 2 },
-                  1024: { slidesPerView: 3 },
-                }}
-                className="px-1"
-              >
-                {extraSlides.map((url, idx) => (
-                  <SwiperSlide key={`thumb-${idx}`} className="h-full">
-                    <div className="relative h-full min-h-[220px] rounded-2xl border border-gray-200 bg-white p-3">
-                      {isImageUrl(url) ? (
-                        <a href={url} target="_blank" rel="noreferrer" title="Ver imagen">
-                          <img
-                            src={url}
-                            alt={`Imagen ${idx + 2}`}
-                            className="aspect-video w-full object-cover rounded-xl"
-                            loading="lazy"
-                          />
-                        </a>
-                      ) : (
-                        <a
-                          href={url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center gap-2 text-sm underline"
-                          style={{ color: ACCENT }}
-                          title="Abrir recurso"
-                        >
-                          {url.split("/").pop()}
-                        </a>
-                      )}
-                    </div>
-                  </SwiperSlide>
-                ))}
-              </Swiper>
-            </section>
-          )}
-
-          {/* Schema (opcional) */}
-          <script
-            type="application/ld+json"
-            dangerouslySetInnerHTML={{
-              __html: JSON.stringify({
-                "@context": "https://schema.org",
-                "@type": "Service",
-                name: servicio.title,
-                description: descripcion || undefined,
-                image: slides?.[0] || undefined,
-                areaServed: "Córdoba, Argentina",
-              }),
-            }}
-          />
-        </div>
-      )}
+      {/* SEO Schema */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdSchema, null, 2) }}
+      />
     </section>
   );
 }

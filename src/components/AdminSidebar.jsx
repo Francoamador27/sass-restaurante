@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
-import { FolderGit2, LogOut, Settings, Home } from 'lucide-react';
+import { FolderGit2, LogOut, Settings, Home,Bot } from 'lucide-react';
 
 import {
     Drawer,
@@ -50,8 +50,9 @@ const AdminSidebar = () => {
         { text: 'Finanzas', icon: <Coins size={20} />, path: '/admin-dash/finanzas' },
         { text: 'Testimonios', icon: <MessageSquareQuote size={20} />, path: '/admin-dash/testimonios' },
         { text: 'Galería', icon: <GalleryThumbnails size={20} />, path: '/admin-dash/ejemplos' },
-        { text: 'Servicios', icon: <FolderGit2 size={20} />, path: '/admin-dash/tratamientos' },
+        { text: 'Servicios', icon: <FolderGit2 size={20} />, path: '/admin-dash/servicios' },
         { text: 'Configuraciones', icon: <Settings size={20} />, path: '/admin-dash/configuraciones' },
+        { text: 'Chatbot', icon: <Bot size={20} />, path: '/admin-dash/chatbot' },
     ];
 
     return (

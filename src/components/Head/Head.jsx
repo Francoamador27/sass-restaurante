@@ -1,17 +1,16 @@
-// SEOHead.jsx (React 19+)
+// SEOHead.jsx (versión optimizada para software odontológico)
 import useCont from "../../hooks/useCont";
 
 export default function SEOHead(props) {
   const { company, contact } = useCont();
-  
+
   const {
-    // ... todas tus props existentes ...
-    priority = "default", // Nueva prop: "high", "default", "low"
-    
+    priority = "default",
+
     title: pTitle,
     description: pDesc,
     keywords,
-    author = company?.name ?? "Mint Odontología",
+    author = company?.name ?? "DentalCor Software Odontológico",
     canonical: pCanonical,
     robots = "index, follow",
     og = {},
@@ -36,42 +35,55 @@ export default function SEOHead(props) {
     extraScripts = [],
   } = props;
 
-  // ---- Derivados por defecto desde el context
-  const siteName     = company?.name ?? "Mint Odontología";
-  const defaultTitle = `${siteName} | Consultorio Odontológico `;
-  const defaultDesc  =
+  // ---- Datos derivados
+  const siteName = company?.name ?? "DentalCor Software Odontológico";
+  const defaultTitle = `${siteName} | Software de gestión para consultorios y clínicas dentales`;
+  const defaultDesc =
     pDesc ??
     (company
-      ? `${company.name}: consultorio odontológico . ${company.address ?? ""} ${company.business_hours ? `· Horario: ${company.business_hours}` : ""}`.trim()
-      : "Consultorio odontológico . Tratamientos, estética, ortodoncia e implantes.");
+      ? `${company.name}: software odontológico integral para administrar pacientes, turnos y tratamientos desde cualquier dispositivo. ${company.address ?? ""} ${company.business_hours ? `· Horario de atención: ${company.business_hours}` : ""}`.trim()
+      : "DentalCor es un software odontológico completo que simplifica la gestión de turnos, historias clínicas y finanzas de tu consultorio dental.");
 
-  const title       = pTitle ?? defaultTitle;
+  const title = pTitle ?? defaultTitle;
   const description = pDesc ?? defaultDesc;
-  const canonical   = pCanonical ?? company?.domain ?? "";
-  const favicon     = pFavicon ?? company?.logo;
+  const canonical = pCanonical ?? company?.domain ?? "";
+  const favicon = pFavicon ?? company?.logo;
 
-  // ---- OG/Twitter con merges
+  // ---- OG / Twitter
   const ogTitle = og.title ?? title;
-  const ogDesc  = og.description ?? description;
+  const ogDesc = og.description ?? description;
   const ogImage = og.image ?? company?.logo;
-  const ogUrl   = og.url ?? canonical;
-  const ogType  = og.type ?? "website";
-  const ogSite  = og.siteName ?? siteName;
+  const ogUrl = og.url ?? canonical;
+  const ogType = og.type ?? "website";
+  const ogSite = og.siteName ?? siteName;
 
-  const twCard  = twitter.card ?? "summary_large_image";
+  const twCard = twitter.card ?? "summary_large_image";
   const twTitle = twitter.title ?? title;
-  const twDesc  = twitter.description ?? description;
+  const twDesc = twitter.description ?? description;
   const twImage = twitter.image ?? ogImage;
 
-  // ---- JSON-LD automático
+  // ---- JSON-LD con schema para software
   const autoJsonLd =
     !jsonLd && (company?.name || company?.address)
       ? {
           "@context": "https://schema.org",
-          "@type": "Dentist",
+          "@type": "SoftwareApplication",
           name: siteName,
+          applicationCategory: "HealthApplication",
+          operatingSystem: "Web, Cloud",
+          description:
+            "Software odontológico integral para la gestión de pacientes, turnos, historias clínicas y administración del consultorio.",
+          offers: {
+            "@type": "Offer",
+            price: "0",
+            priceCurrency: "USD",
+          },
           url: canonical || undefined,
           image: company?.logo || undefined,
+          author: {
+            "@type": "Organization",
+            name: company?.name ?? "DentalCor",
+          },
           address: company?.address
             ? {
                 "@type": "PostalAddress",
@@ -79,28 +91,31 @@ export default function SEOHead(props) {
                 addressCountry: "AR",
               }
             : undefined,
-          geo: {
-            "@type": "GeoCoordinates",
-          },
           telephone: contact?.phone || contact?.whatsapp || undefined,
           email: contact?.email || undefined,
-          openingHours: company?.business_hours ? [company.business_hours] : undefined,
         }
       : jsonLd;
 
   const jsonLdString = autoJsonLd ? JSON.stringify(autoJsonLd, null, 2) : null;
-
-  // Determinar precedencia basada en prioridad
   const precedence = priority === "high" ? "high" : priority === "low" ? "low" : "default";
 
   return (
     <>
-      {/* Title con precedencia */}
+      {/* Title */}
       <title data-priority={precedence}>{title}</title>
 
       {/* Meta básicos */}
       {description && <meta name="description" content={description} data-priority={precedence} />}
-      {keywords && <meta name="keywords" content={keywords} data-priority={precedence} />}
+      {keywords && (
+        <meta
+          name="keywords"
+          content={
+            keywords ||
+            "software odontológico, gestión dental, administración consultorio, turnos odontología, clínica dental, historia clínica digital, odontología en la nube"
+          }
+          data-priority={precedence}
+        />
+      )}
       {author && <meta name="author" content={author} />}
       {robots && <meta name="robots" content={robots} />}
 
@@ -115,35 +130,29 @@ export default function SEOHead(props) {
       {ogUrl && <meta property="og:url" content={ogUrl} data-priority={precedence} />}
       <meta property="og:type" content={ogType} data-priority={precedence} />
 
-      {/* Twitter Card */}
+      {/* Twitter */}
       <meta name="twitter:card" content={twCard} data-priority={precedence} />
       <meta name="twitter:title" content={twTitle} data-priority={precedence} />
       <meta name="twitter:description" content={twDesc} data-priority={precedence} />
       {twImage && <meta name="twitter:image" content={twImage} data-priority={precedence} />}
 
       {/* Verificaciones */}
-      {googleVerification && (
-        <meta name="google-site-verification" content={googleVerification} />
-      )}
+      {googleVerification && <meta name="google-site-verification" content={googleVerification} />}
       {bingVerification && <meta name="msvalidate.01" content={bingVerification} />}
-      {yandexVerification && (
-        <meta name="yandex-verification" content={yandexVerification} />
-      )}
-      {pinterestVerification && (
-        <meta name="p:domain_verify" content={pinterestVerification} />
-      )}
+      {yandexVerification && <meta name="yandex-verification" content={yandexVerification} />}
+      {pinterestVerification && <meta name="p:domain_verify" content={pinterestVerification} />}
 
-      {/* Geo tags */}
+      {/* Geo */}
       {geo.region && <meta name="geo.region" content={geo.region} />}
       {geo.placename && <meta name="geo.placename" content={geo.placename} />}
       {geo.position && <meta name="geo.position" content={geo.position} />}
       {geo.icbm && <meta name="ICBM" content={geo.icbm} />}
 
-      {/* Favicon / CSS por página */}
+      {/* Favicon / CSS */}
       {favicon && <link rel="icon" type="image/png" href={favicon} precedence={precedence} />}
       {stylesheet && <link rel="stylesheet" href={stylesheet} precedence={precedence} />}
 
-      {/* GA4 directo */}
+      {/* Analytics */}
       {ga4Id && !gtmId && (
         <>
           <script async src={`https://www.googletagmanager.com/gtag/js?id=${ga4Id}`} />
@@ -160,7 +169,6 @@ export default function SEOHead(props) {
         </>
       )}
 
-      {/* GTM (head) */}
       {gtmId && (
         <script
           dangerouslySetInnerHTML={{

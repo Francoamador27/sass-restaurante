@@ -8,22 +8,28 @@ import Test from "../components/test/Test";
 import Mapa from "../components/Mapa/Mapa";
 import SEOHead from "../components/Head/Head";
 import GTMBody from "../components/BodyVerification/GTMBody";
+import Beneficios from "../components/Beneficios";
+import Comparacion from "../components/Comparacion";
+import Cta from "../components/Cta";
 const Inicio = () => {
-    const { auth,company } = useCont();
+    const { auth, company } = useCont();
     return (
         <>
             <div className="  ">
                 <FeatureSection />
                 <ComoComprar />
+                <ServiciosFront />
+                <Cta />
+                <Beneficios />
+                <Comparacion />
                 <div>
-                    <ServiciosFront />
                 </div>
                 <Testimonials />
                 <Contacto />
-            <SEOHead
-                priority="high"  // ← ESTO ES LO IMPORTANTE
-                title={`${company.name} | Los mejores tratamientos odontológicos en ${company.address ?? ""}`}
-            />
+                <SEOHead
+                    priority="high"  // ← ESTO ES LO IMPORTANTE
+                    title={`${company.name} | El mejor software odontológico para tu clínica`}
+                />
             </div>
         </>
     );

@@ -197,3 +197,12 @@ th.fc-col-header-cell {
     background-color: #8cb9ce !important;
     color: white;
 }
+.whatsapp-form {
+    width: 100%;
+    max-width: 255px;
+    margin: 0 auto;
+    padding: 10px 0px;
+}
+.chat-location {
+    margin: 0 auto;
+}

@@ -1,8 +1,9 @@
-import logo from '../../assets/img/logo/logo-mint.png';
-import logoWhatsapp from '../../assets/img/logo/logo-mint.png';
+import logo from '../../assets/img/logo/logo_azul.png';
+import logoWhatsapp from '../../assets/img/logo/logo_azul.png';
 import { FaFacebook, FaInstagram } from 'react-icons/fa';
 import ReactWhatsapp, { FloatingWhatsApp } from 'react-floating-whatsapp';
 import useCont from '../../hooks/useCont';
+import { ChatBotReact } from '../ChatBot/ChatBot';
 
 export default function Footer() {
       const { company, logoUrl, contact, social } = useCont();
@@ -15,7 +16,7 @@ export default function Footer() {
                 <div className="flex flex-col items-center md:items-start space-y-3">
                     <img src={logo} alt="Logo DecoImanes" className="h-10 w-auto" />
                     <p className="text-xs text-gray-500">
-                        © 2025<a href="https://www.proyectoswebsite.com/"target='_blank'>Condenix</a> . Todos los derechos reservados.
+                        © 2025<a href="https://www.proyectoswebsite.com/"target='_blank'>Codenix</a> . Todos los derechos reservados.
                     </p>
                 </div>
 
@@ -54,37 +55,7 @@ export default function Footer() {
                 </div>
 
             </div>
-            <FloatingWhatsApp
-                phoneNumber={contact.whatsapp || ""}
-                accountName="Mint Odontologia"
-                avatar={logoWhatsapp}
-                chatMessage="¡Hola! 👋 Somos Mint Odontologia. ¿En qué podemos ayudarte hoy?"
-                placeholder="Escribí tu consulta acá..."
-                statusMessage="Los mejores profesionales en odontologia"
-                darkMode={false}
-                allowClickAway={true}
-                allowEsc={true}
-                notification={true}
-                notificationSound={false}
-                notificationLoop={3}
-                messageDelay={1}
-                notificationDelay={10}
-                chatboxHeight={380}
-                className="floating-wsp"
-                chatboxClassName="floating-wsp-chat"
-                buttonStyle={{
-                    backgroundColor: '#25D366',
-                    boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.2)',
-                    borderRadius: '50%',
-                }}
-                chatboxStyle={{
-                    backgroundColor: '#ffffff',
-                    color: '#333333',
-                    fontFamily: 'Inter, sans-serif',
-                    borderRadius: '12px',
-                    boxShadow: '0 6px 18px rgba(0,0,0,0.1)',
-                }}
-            />
+            <ChatBotReact />
 
 
         </footer>

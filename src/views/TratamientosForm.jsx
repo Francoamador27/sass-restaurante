@@ -16,30 +16,41 @@ const slugify = (str) =>
 const MAX_MB = 5;
 const MAX_BYTES = MAX_MB * 1024 * 1024;
 
+// 🔥 Función para extraer el ID de cualquier URL de YouTube
+const extractYouTubeID = (url) => {
+    if (!url) return "";
+    const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[7].length === 11) ? match[7] : "";
+};
+
 const TratamientosForm = () => {
     const token = localStorage.getItem("AUTH_TOKEN");
 
-    const [title, setTitle] = useState(""); // nombre del sitio
-    const [link, setLink] = useState(""); // url
-    const [description, setDescription] = useState(""); // descripción
+    const [title, setTitle] = useState("");
+    const [video, setVideo] = useState("");
+    const [youtubeId, setYoutubeId] = useState("");  // ID para previsualizar
+    const [description, setDescription] = useState("");
+
     const slug = useMemo(() => slugify(title), [title]);
-    const [category, setCategory] = useState(1);     // 1 = Desarrollo web, 2 = Integraciones web
-    const [createData, setCreateData] = useState(""); // "2025-07-01"
+    const [category, setCategory] = useState(1);
+    const [createData, setCreateData] = useState("");
+
     // Tags
     const [tagsInput, setTagsInput] = useState("");
     const [tags, setTags] = useState([]);
 
     // Características
     const [features, setFeatures] = useState([
-        { title: "", description: "" },
+        { title: "", description: "" }
     ]);
 
     // Imágenes
     const [mainImage, setMainImage] = useState(null);
     const [mainImagePreview, setMainImagePreview] = useState(null);
 
-    const [gallery, setGallery] = useState([]); // Files[]
-    const [galleryPreviews, setGalleryPreviews] = useState([]); // string[]
+    const [gallery, setGallery] = useState([]);
+    const [galleryPreviews, setGalleryPreviews] = useState([]);
 
     // Estado UI
     const [mensaje, setMensaje] = useState(null);
@@ -48,7 +59,7 @@ const TratamientosForm = () => {
     const [dragActiveMain, setDragActiveMain] = useState(false);
     const [dragActiveGallery, setDragActiveGallery] = useState(false);
 
-    // Helpers de validación de archivos
+    // Validación archivos
     const validarArchivo = (file) => {
         const okType = /image\/(jpeg|png|webp)/.test(file.type);
         if (!okType) return "Formato inválido. Solo JPG, PNG o WEBP.";
@@ -56,7 +67,7 @@ const TratamientosForm = () => {
         return null;
     };
 
-    // TAGS
+    // Tags
     const parseTags = (raw) =>
         raw
             .split(",")
@@ -66,7 +77,6 @@ const TratamientosForm = () => {
     const addTagsFromInput = () => {
         const nuevos = parseTags(tagsInput);
         if (!nuevos.length) return;
-        // Evitar repetidos
         const set = new Set([...tags, ...nuevos]);
         setTags(Array.from(set));
         setTagsInput("");
@@ -76,7 +86,7 @@ const TratamientosForm = () => {
         setTags((prev) => prev.filter((_, i) => i !== idx));
     };
 
-    // FEATURES
+    // Features
     const addFeature = () => {
         setFeatures((prev) => [...prev, { title: "", description: "" }]);
     };
@@ -91,7 +101,7 @@ const TratamientosForm = () => {
         );
     };
 
-    // MAIN IMAGE
+    // Main Image
     const handleMainImageChange = (file) => {
         if (!file) return;
         const err = validarArchivo(file);
@@ -130,7 +140,6 @@ const TratamientosForm = () => {
         setMainImage(null);
         setMainImagePreview(null);
     };
-
     // GALLERY
     const handleGalleryChange = (filesList) => {
         const files = Array.from(filesList || []);
@@ -191,7 +200,10 @@ const TratamientosForm = () => {
 
         // features: opcional, pero si hay vacías, las filtramos
         const featuresClean = features
-            .map((f) => ({ title: f.title.trim(), description: f.description.trim() }))
+            .map((f) => ({
+                title: f.title.trim(),
+                description: f.description.trim()
+            }))
             .filter((f) => f.title || f.description);
 
         // armado del payload
@@ -199,25 +211,27 @@ const TratamientosForm = () => {
         formData.append("title", title);
         formData.append("slug", slug);
         formData.append("description", description);
-        formData.append("link", link);
+formData.append("video", video);
         formData.append("category", String(category));
         if (createData) formData.append("create_data", createData);
-        
+
         // Tags
         tags.forEach((t) => formData.append("tags[]", t));
         formData.append("tags_json", JSON.stringify(tags));
 
         // Features y imágenes
         formData.append("features", JSON.stringify(featuresClean));
-        formData.append("mainImage", mainImage);
-        formData.append("image", mainImage);
+        if (mainImage) {
+            formData.append("mainImage", mainImage);
+            formData.append("image", mainImage);
+        }
 
         // Galería
         gallery.forEach((f) => formData.append("gallery[]", f));
 
         try {
             setCargando(true);
-            
+
             const response = await clienteAxios.post("/api/servicios", formData, {
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -227,10 +241,11 @@ const TratamientosForm = () => {
 
             if (response.status === 200 || response.status === 201) {
                 setMensaje("Tratamiento registrado correctamente");
-                
+
                 // Reset del formulario
                 setTitle("");
-                setLink("");
+                setVideo("");
+                setYoutubeId("");
                 setDescription("");
                 setTagsInput("");
                 setTags([]);
@@ -241,10 +256,10 @@ const TratamientosForm = () => {
                 setGallery([]);
                 setGalleryPreviews([]);
             }
-            
+
         } catch (err) {
             console.error("Error completo:", err);
-            
+
             if (err.response) {
                 setError(err.response.data?.message || `Error del servidor: ${err.response.status}`);
             } else if (err.request) {
@@ -260,8 +275,6 @@ const TratamientosForm = () => {
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 ">
             <div className="max-w-5xl mx-auto">
-
-
                 {/* Form Container */}
                 <div className="bg-white shadow-lg border border-slate-200 rounded-xl p-8">
                     <form onSubmit={handleSubmit} className="space-y-8">
@@ -306,6 +319,38 @@ const TratamientosForm = () => {
                                 value={description}
                                 onChange={(e) => setDescription(e.target.value)}
                             />
+                        </div>
+
+                        {/* Link de YouTube */}
+                        <div className="space-y-2">
+                            <label className="block text-sm font-semibold text-slate-700">
+                                Video de YouTube (opcional)
+                            </label>
+
+                            <input
+                                type="text"
+                                className="w-full border border-slate-300 p-3 rounded-lg 
+                                focus:border-red-600 focus:ring-2 focus:ring-red-600/20 transition-all duration-200 bg-white"
+                                placeholder="Pegá el enlace de YouTube aquí"
+                                value={video}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    setVideo(val);
+                                    setYoutubeId(extractYouTubeID(val));
+                                }}
+                            />
+
+                            {youtubeId && (
+                                <div className="mt-4 aspect-video w-full rounded-lg overflow-hidden shadow-lg border border-slate-200">
+                                    <iframe
+                                        className="w-full h-full"
+                                        src={`https://www.youtube.com/embed/${youtubeId}`}
+                                        title="YouTube video preview"
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                        allowFullScreen
+                                    ></iframe>
+                                </div>
+                            )}
                         </div>
 
                         {/* Tags */}
@@ -500,7 +545,10 @@ const TratamientosForm = () => {
 
                             <div className="space-y-4 p-4 bg-slate-50 rounded-lg border border-slate-200">
                                 {features.map((f, idx) => (
-                                    <div key={idx} className="grid grid-cols-1 lg:grid-cols-7 gap-4 items-start p-4 bg-white rounded-lg border border-slate-200">
+                                    <div
+                                        key={idx}
+                                        className="grid grid-cols-1 lg:grid-cols-7 gap-4 items-start p-4 bg-white rounded-lg border border-slate-200"
+                                    >
                                         <div className="lg:col-span-2">
                                             <input
                                                 type="text"
@@ -534,15 +582,14 @@ const TratamientosForm = () => {
                                 ))}
                             </div>
                         </div>
-
                         {/* Botones de acción */}
                         <div className="flex flex-col sm:flex-row items-center gap-4 pt-6 border-t border-slate-200">
                             <button
                                 type="submit"
                                 disabled={cargando}
                                 className={`w-full sm:w-auto px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-300 ${cargando
-                                    ? 'bg-slate-400 cursor-not-allowed text-white'
-                                    : 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl'
+                                        ? "bg-slate-400 cursor-not-allowed text-white"
+                                        : "bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl"
                                     }`}
                             >
                                 {cargando ? (
@@ -551,7 +598,7 @@ const TratamientosForm = () => {
                                         Guardando...
                                     </span>
                                 ) : (
-                                    'Registrar Tratamiento'
+                                    "Registrar Tratamiento"
                                 )}
                             </button>
 
@@ -562,19 +609,32 @@ const TratamientosForm = () => {
                                 </summary>
                                 <div className="mt-3 p-4 bg-slate-900 text-green-400 rounded-lg max-h-60 overflow-auto text-xs font-mono">
                                     <pre>
-                                        {JSON.stringify({
-                                            slug,
-                                            title,
-                                            description,
-                                            link,
-                                            tags,
-                                            features: features
-                                                .map(f => ({ title: f.title.trim(), description: f.description.trim() }))
-                                                .filter(f => f.title || f.description),
-                                            image: mainImage ? "(archivo de imagen principal)" : null,
-                                            mainImage: mainImage ? "(archivo de imagen principal)" : null,
-                                            gallery: gallery.length ? `(${gallery.length} archivos de galería)` : []
-                                        }, null, 2)}
+                                        {JSON.stringify(
+                                            {
+                                                slug,
+                                                title,
+                                                description,
+                                                video, // 🔴 el link de YouTube enviado
+                                                tags,
+                                                features: features
+                                                    .map((f) => ({
+                                                        title: f.title.trim(),
+                                                        description: f.description.trim()
+                                                    }))
+                                                    .filter((f) => f.title || f.description),
+                                                image: mainImage
+                                                    ? "(archivo de imagen principal)"
+                                                    : null,
+                                                mainImage: mainImage
+                                                    ? "(archivo de imagen principal)"
+                                                    : null,
+                                                gallery: gallery.length
+                                                    ? `(${gallery.length} archivos de galería)`
+                                                    : []
+                                            },
+                                            null,
+                                            2
+                                        )}
                                     </pre>
                                 </div>
                             </details>

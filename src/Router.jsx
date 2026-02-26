@@ -40,6 +40,9 @@ import Servicios from "./views/Servicios";
 import ServiciosFront from "./components/ServiciosFront";
 import ServiciosShow from "./components/Servicios/ServiciosShow";
 import Finanzas from "./components/Finanzas/Finanzas";
+import TratamientosForm from "./views/TratamientosForm";
+import EditServicios from "./components/Servicios/EditServicios";
+import AdminChatbot from "./views/AdminChatbot";
 
 const router = createBrowserRouter([
   {
@@ -91,12 +94,17 @@ const router = createBrowserRouter([
       { path: '/admin-dash/testimonios', element: <PanelTestimonios /> },
       { path: '/admin-dash/ejemplos', element: <EjemplosPanel /> },
       { path: '/admin-dash/create-product', element: <CreateProducto /> },
-      { path: '/admin-dash/tratamientos', element: <Servicios /> },
+      { path: '/admin-dash/servicios', element: <Servicios /> },
+      { path: '/admin-dash/servicios/editar/:id', element: <EditServicios /> },
       { path: '/admin-dash/finanzas', element: <Finanzas  /> },
 
       {
         path: "/admin-dash/configuraciones",
         element: <Configuraciones />
+      },
+      {
+        path: "/admin-dash/chatbot",
+        element: <AdminChatbot  />
       },
       {
         path: "/admin-dash/descuentos/:id",

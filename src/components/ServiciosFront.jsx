@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import WhatsappHref from '../utils/WhatsappUrl';
 import useSWR from 'swr';
 import clienteAxios from '../config/axios';
-import Mapa from './Mapa/Mapa';
 import SEOHead from './Head/Head';
 import useCont from '../hooks/useCont';
 
@@ -11,164 +10,236 @@ export default function ServiciosFront() {
   const [visibleCards, setVisibleCards] = useState(new Set());
   const [serviciosApi, setServiciosApi] = useState([]);
 
-  // ---- SWR ----
+  // ---- SWR (API dinámica) ----
   const fetcher = (url) => clienteAxios(url).then((res) => res.data);
   const { data, error, isLoading } = useSWR('/api/servicios', fetcher, {
     revalidateOnFocus: false,
     keepPreviousData: true,
   });
 
-  // ---- Cargar a state + loguear ----
   useEffect(() => {
     if (!data) return;
-    // Si es paginador Laravel: { data: [...] }, si no: [...]
-    const items = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
+    const items = Array.isArray(data?.data)
+      ? data.data
+      : Array.isArray(data)
+        ? data
+        : [];
     setServiciosApi(items);
   }, [data]);
 
-  // ---- Animaciones al entrar en viewport ----
+  // ---- Animación al entrar ----
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            setVisibleCards((prev) => new Set(prev).add(entry.target.dataset.index));
+            setVisibleCards((prev) =>
+              new Set(prev).add(entry.target.dataset.index)
+            );
           }
         });
       },
       { threshold: 0.1, rootMargin: '50px' }
     );
-
-    // Re-observar cuando cambia la lista
     const cards = document.querySelectorAll('[data-index]');
     cards.forEach((card) => observer.observe(card));
-
     return () => observer.disconnect();
   }, [serviciosApi]);
 
-  // ---- Fallback estático (si la API no trae nada) ----
+  // ---- Fallback si la API no trae nada ----
   const serviciosFallback = [
-    { icon: '🦷', titulo: 'Odontología General', descripcion: 'Diagnóstico integral, tratamiento de caries con técnicas mínimamente invasivas y restauraciones estéticas con resinas de última generación. Atención personalizada en Córdoba.', keywords: 'caries, empastes, restauraciones dentales córdoba', highlight: 'Resinas estéticas duraderas' },
-    { icon: '✨', titulo: 'Estética Dental', descripcion: 'Blanqueamiento profesional LED, carillas de porcelana y contorneado dental. Diseño de sonrisa digital para resultados naturales y armónicos en Córdoba.', keywords: 'blanqueamiento dental, carillas, diseño sonrisa córdoba', highlight: 'Sonrisa perfecta' },
-    { icon: '🪥', titulo: 'Prevención e Higiene', descripcion: 'Profilaxis profesional, selladores de fisuras y aplicación de flúor. Programa integral de educación bucodental para toda la familia en Córdoba.', keywords: 'limpieza dental, prevención, higiene bucal córdoba', highlight: 'Prevención es salud' },
-    { icon: '🧭', titulo: 'Ortodoncia Avanzada', descripcion: 'Ortodoncia invisible con alineadores transparentes, brackets estéticos y planificación digital 3D. Corrección de mordida y alineación dental en Córdoba.', keywords: 'ortodoncia invisible, brackets, alineadores córdoba', highlight: 'Tecnología 3D' },
-    { icon: '⚙️', titulo: 'Implantes y Prótesis', descripcion: 'Implantes dentales de titanio, prótesis fijas y removibles. Rehabilitación oral completa con tecnología de vanguardia y garantía extendida en Córdoba.', keywords: 'implantes dentales, prótesis dental córdoba', highlight: 'Solución definitiva' },
-    { icon: '🩺', titulo: 'Endodoncia Especializada', descripcion: 'Tratamientos de conducto con microscopio dental y técnicas rotatorias. Salvamos tus dientes naturales eliminando el dolor de forma definitiva.', keywords: 'endodoncia, tratamiento conducto córdoba', highlight: 'Sin dolor garantizado' },
-    { icon: '👶', titulo: 'Odontopediatría', descripcion: 'Atención dental especializada para niños y adolescentes. Ambiente lúdico, técnicas adaptadas y educación preventiva para una sonrisa saludable desde pequeños.', keywords: 'dentista niños, odontopediatría córdoba', highlight: 'Ambiente amigable' },
-    { icon: '⏱️', titulo: 'Urgencias Dentales 24/7', descripcion: 'Atención inmediata para dolor dental, fracturas y emergencias. Servicio de guardia con respuesta rápida para resolver crisis agudas en Córdoba.', keywords: 'urgencias dentales, emergencia dental córdoba', highlight: 'Respuesta inmediata' },
+    {
+      icon: '🧠',
+      titulo: 'Gestión Integral del Consultorio',
+      descripcion:
+        'Administra turnos, pacientes, tratamientos, finanzas y personal desde un solo lugar. DentalCor centraliza toda la información de tu clínica.',
+      highlight: 'Todo en un solo sistema',
+    },
+    {
+      icon: '📅',
+      titulo: 'Agenda Inteligente de Turnos',
+      descripcion:
+        'Organiza turnos por profesional, sala o especialidad. Notificaciones automáticas por WhatsApp y recordatorios a tus pacientes.',
+      highlight: 'Ahorra tiempo',
+    },
+    {
+      icon: '💳',
+      titulo: 'Módulo Financiero',
+      descripcion:
+        'Control de facturación, presupuestos, pagos, deudas y reportes automáticos. Mantén el control de tu clínica en tiempo real.',
+      highlight: 'Finanzas claras',
+    },
+    {
+      icon: '📊',
+      titulo: 'Panel de Estadísticas',
+      descripcion:
+        'Visualiza métricas clave: ingresos, pacientes activos, tratamientos realizados, conversión y más. Decisiones basadas en datos.',
+      highlight: 'Análisis en tiempo real',
+    },
+    {
+      icon: '📂',
+      titulo: 'Historias Clínicas Digitales',
+      descripcion:
+        'Registra evolución, diagnósticos, odontogramas y archivos por paciente. Acceso rápido y seguro desde cualquier dispositivo.',
+      highlight: 'Todo digitalizado',
+    },
+    {
+      icon: '👥',
+      titulo: 'Portal para Pacientes',
+      descripcion:
+        'Tus pacientes pueden ver sus turnos, historial y estudios desde una plataforma segura. Mejora la comunicación y fidelización.',
+      highlight: 'Mejor experiencia',
+    },
+    {
+      icon: '🔒',
+      titulo: 'Seguridad y Respaldo',
+      descripcion:
+        'Tu información y la de tus pacientes está protegida con encriptación SSL y backups automáticos en la nube.',
+      highlight: 'Protección total',
+    },
+    {
+      icon: '🚀',
+      titulo: 'Soporte y Capacitación',
+      descripcion:
+        'Te acompañamos en cada paso con soporte técnico local y capacitaciones personalizadas para tu equipo.',
+      highlight: 'Acompañamiento 24/7',
+    },
   ];
 
-  // Si la API trae algo, usamos eso; si no, fallback
-  const servicios = (serviciosApi?.length ? serviciosApi : serviciosFallback).map((s) => ({
-    // Normalizamos campos posibles del backend
-    icon: s.icon ?? '🦷',
-    titulo: s.titulo ?? s.title ?? 'Servicio',
-    descripcion: s.descripcion ?? s.description ?? '',
-    keywords: s.keywords ?? '',
-    highlight: s.highlight ?? s.tagline ?? '',
-    slug: s.slug,
-    // opcional: imagen si tu API la tiene (s.image)
-    image: s.image ?? null,
-  }));
-  const { auth, company } = useCont();
+  // Si la API trae datos, los usamos; si no, fallback
+  const servicios = (serviciosApi?.length ? serviciosApi : serviciosFallback).map(
+    (s) => ({
+      icon: s.icon ?? '💻',
+      titulo: s.titulo ?? s.title ?? 'Módulo del sistema',
+      descripcion: s.descripcion ?? s.description ?? '',
+      highlight: s.highlight ?? s.tagline ?? '',
+      slug: s.slug ?? s.titulo?.toLowerCase().replace(/\s+/g, '-'),
+      image: s.image ?? null,
+    })
+  );
+
+  const { company } = useCont();
 
   return (
-
-    <section className="relative bg-gradient-to-br from-[#fefbf5] via-white to-[#f8f9fa] py-20 px-6 lg:px-20 overflow-hidden">
+    <section className="relative bg-gradient-to-br from-blue-50 via-white to-cyan-50 py-20 px-6 lg:px-20 overflow-hidden">
       <SEOHead
-
-          priority="low"  // ← Baja prioridad
-        title={`${company.name} | Servicios odontológicos de calidad en ${company.address ?? ""}`}
-        description={`Descubrí los servicios odontológicos que ofrecemos en ${company.name}. Atención integral, tecnología avanzada y un equipo de expertos para cuidar tu sonrisa en ${company.address ?? ""}.`}
+        priority="low"
+        title={`${company.name} | Módulos y funcionalidades del software odontológico`}
+        description={`Conocé las herramientas que ofrece ${company.name}: gestión integral, historias clínicas digitales, agenda inteligente y panel financiero. Potenciá tu clínica con tecnología.`}
       />
-      {/* BG decorativo */}
-      <div className="absolute inset-0 opacity-5">
-        <div className="absolute top-20 left-10 w-32 h-32 bg-[#8cb9ce] rounded-full blur-3xl"></div>
-        <div className="absolute bottom-20 right-10 w-40 h-40 bg-[#a8d0e0] rounded-full blur-3xl"></div>
-        <div className="absolute top-1/2 left-1/3 w-24 h-24 bg-[#8cb9ce] rounded-full blur-2xl"></div>
+
+      {/* Efectos de fondo */}
+      <div className="absolute inset-0 opacity-[0.04]">
+        <div className="absolute top-20 left-10 w-32 h-32 bg-blue-400 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-20 right-10 w-40 h-40 bg-cyan-300 rounded-full blur-3xl"></div>
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-16">
-          <div className="inline-flex items-center gap-2 bg-[#8cb9ce]/10 px-4 py-2 rounded-full text-[#8cb9ce] font-medium text-sm mb-4">
-            <span className="w-2 h-2 bg-[#8cb9ce] rounded-full animate-pulse"></span>
-            Consultorio Odontológico en Córdoba
+          <div className="inline-flex items-center gap-2 bg-blue-100 px-4 py-2 rounded-full text-blue-700 font-medium text-sm mb-4">
+            <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
+            Software Odontológico en la Nube
           </div>
-          <h2 className="text-4xl lg:text-5xl font-bold text-gray-800 mb-4">
-            Servicios Odontológicos
-            <span className="block text-[#8cb9ce] text-2xl lg:text-3xl font-light mt-2">
-              de Excelencia
+          <h2 className="text-4xl lg:text-5xl font-black text-slate-900 mb-4">
+            Funcionalidades Principales
+            <span className="block text-blue-600 text-2xl lg:text-3xl font-light mt-2">
+              Todo lo que tu clínica necesita
             </span>
           </h2>
-          <p className="text-gray-600 max-w-2xl mx-auto text-lg leading-relaxed">
-            Atención dental integral con tecnología avanzada y más de 15 años de experiencia
-            cuidando sonrisas en Córdoba. Tu salud bucodental en manos expertas.
+          <p className="text-slate-600 max-w-2xl mx-auto text-lg leading-relaxed">
+            DentalCor reúne en un solo sistema todo lo necesario para administrar tu clínica de
+            forma ágil, segura y profesional. Desde la agenda hasta las finanzas, todo conectado.
           </p>
-          <div className="mt-6 h-1 w-32 rounded-full mx-auto bg-gradient-to-r from-[#8cb9ce] to-[#a8d0e0]"></div>
+          <div className="mt-6 h-1 w-32 rounded-full mx-auto bg-gradient-to-r from-blue-600 to-cyan-400"></div>
         </div>
 
-        {/* Estado de carga / error */}
+        {/* Carga o error */}
         {isLoading && (
-          <div className="text-center text-slate-500 mb-8">Cargando servicios…</div>
+          <div className="text-center text-slate-500 mb-8">
+            Cargando módulos del sistema…
+          </div>
         )}
         {error && (
-          <div className="text-center text-red-600 mb-8">No se pudieron cargar los servicios.</div>
+          <div className="text-center text-red-600 mb-8">
+            No se pudieron cargar los módulos.
+          </div>
         )}
 
-        {/* Grid */}
+        {/* Grid de módulos */}
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 mb-16">
           {servicios.map((item, idx) => (
             <div
               key={idx}
               data-index={idx}
-              className={`group relative bg-white/80 backdrop-blur-sm border border-gray-100 rounded-2xl p-6 
-                hover:bg-white hover:shadow-2xl hover:border-[#8cb9ce]/20 
-                transform transition-all duration-500 hover:-translate-y-2
-                ${visibleCards.has(String(idx))
-                  ? 'opacity-100 translate-y-0'
-                  : 'opacity-0 translate-y-8'
+              className={`group relative bg-white/80 backdrop-blur-sm border border-slate-100 rounded-2xl p-6 
+        hover:bg-white hover:shadow-2xl hover:border-blue-200/40 
+        transform transition-all duration-500 hover:-translate-y-2
+        ${visibleCards.has(String(idx))
+                  ? "opacity-100 translate-y-0"
+                  : "opacity-0 translate-y-8"
                 }`}
               style={{ transitionDelay: `${idx * 100}ms` }}
             >
-              {/* BG gradiente hover */}
-              <div className="absolute inset-0 bg-gradient-to-br from-[#8cb9ce]/5 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              {/* 🔗 Link invisible pero clickeable en toda la card */}
+              <Link
+                to={`/servicios/${item.slug}`}
+                className="absolute inset-0 rounded-2xl z-20 pointer-events-auto"
+                aria-label={`Ver detalles de ${item.titulo}`}
+              />
 
-              {/* Badge */}
-              {item.highlight && (
-                <div className="absolute -top-3 -right-3 bg-[#8cb9ce] text-white text-xs px-3 py-1 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transform scale-75 group-hover:scale-100 transition-all duration-300">
-                  {item.highlight}
-                </div>
-              )}
+              {/* Fondo de hover */}
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-100/10 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
 
-              <div className="relative z-10">
+              {/* Contenido visual */}
+              <div className="relative z-10 pointer-events-none">
+                {/* Badge */}
+                {item.highlight && (
+                  <div className="absolute -top-3 -right-3 bg-blue-600 text-white text-xs px-3 py-1 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transform scale-75 group-hover:scale-100 transition-all duration-300 pointer-events-none">
+                    {item.highlight}
+                  </div>
+                )}
+
                 {/* Icono o imagen */}
-                <div className="flex items-center justify-center w-16 h-16 bg-[#8cb9ce]/10 rounded-2xl mb-4 group-hover:bg-[#8cb9ce]/20 transition-colors duration-300 overflow-hidden">
+                <div className="flex items-center justify-center w-16 h-16 bg-blue-100 rounded-2xl mb-4 group-hover:bg-blue-200 transition-colors duration-300 overflow-hidden">
                   {item.image ? (
-                    <img src={item.image} alt={item.titulo} className="object-cover w-full h-full" />
+                    <img
+                      src={item.image}
+                      alt={item.titulo}
+                      className="object-cover w-full h-full"
+                    />
                   ) : (
-                    <span className="text-3xl transform group-hover:scale-110 transition-transform duration-300">
+                    <span className="text-3xl group-hover:scale-110 transition-transform duration-300">
                       {item.icon}
                     </span>
                   )}
                 </div>
 
-                {/* Contenido */}
-                <h3 className="text-xl font-bold text-gray-800 mb-3 group-hover:text-[#8cb9ce] transition-colors duration-300">
+                {/* Título */}
+                <h3 className="text-xl font-bold text-slate-900 mb-3 group-hover:text-blue-600 transition-colors duration-300">
                   {item.titulo}
                 </h3>
-<p className="text-gray-600 text-sm leading-relaxed mb-4 line-clamp-2">
-  {item.descripcion}
-</p>
 
-                {/* Keywords SEO (screen-reader only) */}
-                {item.keywords && <span className="sr-only">{item.keywords}</span>}
+                {/* Descripción */}
+                <p className="text-slate-600 text-sm leading-relaxed mb-4 line-clamp-2">
+                  {item.descripcion}
+                </p>
 
-                {/* Indicador hover */}
-                <div className="flex items-center text-[#8cb9ce] text-sm font-medium  group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0 transition-all duration-300">
-                  <Link to={`/servicios/${item.slug}`}>Más información</Link>
-                  <svg className="w-4 h-4 ml-1 transform group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                {/* Indicador visual */}
+                <div className="flex items-center text-blue-600 text-sm font-medium opacity-90 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0 transition-all duration-300">
+                  Ver detalles
+                  <svg
+                    className="w-4 h-4 ml-1 transform group-hover:translate-x-1 transition-transform duration-300"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5l7 7-7 7"
+                    />
                   </svg>
                 </div>
               </div>
@@ -176,26 +247,27 @@ export default function ServiciosFront() {
           ))}
         </div>
 
-        {/* CTA */}
+
+        {/* CTA Final */}
         <div className="text-center">
           <div className="flex flex-wrap gap-4 justify-center items-center">
-
-
             <a
-              href={WhatsappHref({ message: "Hola, necesito turno para odontologia" })}
-              className="bg-white/95 hover:bg-white text-[#008DD2] ring-1 ring-[#008DD2]/20 px-6 py-3 rounded-md font-semibold shadow-sm transition"
+              href={WhatsappHref({
+                message: 'Hola, quiero una demo del sistema DentalCor',
+              })}
+              className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white px-8 py-4 rounded-xl font-semibold shadow-xl hover:shadow-blue-500/30 transition-all"
               target="_blank"
               rel="noreferrer"
             >
-              📅 Reservar turno
+              🚀 Solicitar demo gratis
             </a>
           </div>
 
-          <div className="mt-8 text-sm text-gray-500">
+          <div className="mt-8 text-sm text-slate-500">
             <p>
-              📍 <strong>Consultorio odontológico en Córdoba Capital</strong> |
-              ⏰ <strong>Turnos disponibles</strong> |
-              🏆 <strong>+15 años de experiencia</strong>
+              🌐 <strong>Software en la nube</strong> | 🏥{' '}
+              <strong>+500 clínicas conectadas</strong> | 🛡️{' '}
+              <strong>Datos 100% seguros</strong>
             </p>
           </div>
         </div>
@@ -206,20 +278,19 @@ export default function ServiciosFront() {
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
               "@context": "https://schema.org",
-              "@type": "DentalClinic",
-              "name": "Consultorio Odontológico Córdoba",
-              "address": {
-                "@type": "PostalAddress",
-                "addressLocality": "Córdoba",
-                "addressCountry": "Argentina"
+              "@type": "SoftwareApplication",
+              name: "DentalCor",
+              operatingSystem: "Web, Cloud",
+              applicationCategory: "HealthApplication",
+              offers: {
+                "@type": "Offer",
+                price: "0",
+                priceCurrency: "USD",
               },
-              "medicalSpecialty": servicios.map(s => s.titulo),
-              "availableService": servicios.map(servicio => ({
-                "@type": "MedicalProcedure",
-                "name": servicio.titulo,
-                "description": servicio.descripcion
-              }))
-            })
+              featureList: servicios.map((s) => s.titulo),
+              description:
+                "Software odontológico integral para la gestión de clínicas y consultorios. Agenda, pacientes, finanzas y reportes en una sola plataforma.",
+            }),
           }}
         />
       </div>
