@@ -16,8 +16,6 @@ import "@fontsource/nunito-sans/400.css";
 import "@fontsource/comfortaa/700.css";
 
 import GTMBody from "./components/BodyVerification/GTMBody";
-import InstallPWAButton from "./components/InstallPWAButton";
-import { IOSInstallHint } from "./components/IOSInstallHint";
 
 // 👉 nuevos imports
 
@@ -28,11 +26,5 @@ createRoot(document.getElementById("root")).render(
 
       {/* App con router */}
       <RouterProvider router={router} />
-
-      {/* Botón flotante para instalar la PWA (Android / Desktop) */}
-      <InstallPWAButton />
-
-      {/* Mensajito opcional para iOS (Agregar a pantalla de inicio) */}
-      <IOSInstallHint />
     </Provider>
 );
