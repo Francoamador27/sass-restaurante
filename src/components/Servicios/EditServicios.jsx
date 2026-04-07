@@ -197,7 +197,7 @@ export default function EditServicios() {
         try {
             setCargando(true);
 
-            await clienteAxios.post(`/api/servicios/${id}?_method=PUT`, formData, {
+            await clienteAxios.post(`/api/superadmin/servicios/${id}?_method=PUT`, formData, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     "Content-Type": "multipart/form-data",

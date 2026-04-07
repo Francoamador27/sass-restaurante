@@ -232,7 +232,7 @@ formData.append("video", video);
         try {
             setCargando(true);
 
-            const response = await clienteAxios.post("/api/servicios", formData, {
+            const response = await clienteAxios.post("/api/superadmin/servicios", formData, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     "Content-Type": "multipart/form-data",

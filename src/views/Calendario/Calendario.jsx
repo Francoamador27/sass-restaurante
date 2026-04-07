@@ -11,6 +11,7 @@ import esLocale from '@fullcalendar/core/locales/es';
 import ModalShowEvent from './ModalShowEvent';
 import ModalCreateEvent from './ModalCreateEvent';
 import clienteAxios from '../../config/axios';
+import './calendario.css';
 
 // ✅ SOLUCIÓN: Funciones helper fuera del componente (estables por naturaleza)
 const normalizeDate = (val) => {
@@ -156,12 +157,26 @@ function Calendar() {
     }) : '—';
 
   return (
-    <>
-      <div style={{ padding: '12px 0', borderBottom: '1px solid #eee', marginBottom: 12 }}>
-        <h2 style={{ margin: 0 }}>Calendario</h2>
-        {loading && <small>Cargando eventos…</small>}
-        {saving && <small style={{ marginLeft: 8 }}>Guardando…</small>}
+    <div className="calendar-wrapper">
+      {/* Header personalizado */}
+      <div className="calendar-header">
+        <h2>Calendario de Citas</h2>
+        <div className="calendar-header-meta">
+          {saving && (
+            <span className="calendar-saving-badge">
+              <span className="calendar-saving-dot" />
+              Guardando…
+            </span>
+          )}
+          <span className="calendar-status">
+            <span className="calendar-status-dot" />
+            En línea
+          </span>
+        </div>
       </div>
+
+      {/* Barra de progreso de carga */}
+      {loading && <div className="calendar-loading-bar" />}
 
       <FullCalendar
         ref={calendarRef}
@@ -226,7 +241,7 @@ function Calendar() {
           }}
         />
       )}
-    </>
+    </div>
   );
 }
 

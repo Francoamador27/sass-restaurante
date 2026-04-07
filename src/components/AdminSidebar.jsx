@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
-import { FolderGit2, LogOut, Settings, Home,Bot } from 'lucide-react';
+import { LogOut, Settings, Home } from 'lucide-react';
 
 import {
     Drawer,
@@ -17,17 +17,10 @@ import {
     Tooltip,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
-import {
-    Users,
-    GalleryThumbnails,
-    Calendar,
-    MessageSquareQuote,
-    ShieldUser,
-    Coins,
-    ListCheck
-} from 'lucide-react';
+import { Users, Calendar, ShieldUser, Coins, ListCheck, FileText } from 'lucide-react';
 import UseAuth from '../hooks/useAuth';
 import useCont from '../hooks/useCont';
+import TenantSwitcher from './TenantSwitcher';
 
 const drawerWidth = 240;
 const collapsedWidth = 72;
@@ -36,23 +29,20 @@ const AdminSidebar = () => {
     const { company } = useCont();
     const [open, setOpen] = useState(true);
     const location = useLocation();
-    const { logout, user } = UseAuth({ middleware: 'auth' });
+    const { logout, user, activeTenant } = UseAuth({ middleware: 'auth' });
 
     const handleDrawerToggle = () => {
         setOpen(!open);
     };
 
     const menuItems = [
-        { text: 'Calendario', icon: <Calendar size={20} />, path: '/admin-dash' },
-        { text: 'Citas', icon: <ListCheck size={20} />, path: '/admin-dash/citas' },
-        { text: 'Pacientes', icon: <Users size={20} />, path: '/admin-dash/pacientes' },
-        { text: 'Profesionales', icon: <ShieldUser size={20} />, path: '/admin-dash/doctores' },
-        { text: 'Finanzas', icon: <Coins size={20} />, path: '/admin-dash/finanzas' },
-        { text: 'Testimonios', icon: <MessageSquareQuote size={20} />, path: '/admin-dash/testimonios' },
-        { text: 'Galería', icon: <GalleryThumbnails size={20} />, path: '/admin-dash/ejemplos' },
-        { text: 'Servicios', icon: <FolderGit2 size={20} />, path: '/admin-dash/servicios' },
-        { text: 'Configuraciones', icon: <Settings size={20} />, path: '/admin-dash/configuraciones' },
-        { text: 'Chatbot', icon: <Bot size={20} />, path: '/admin-dash/chatbot' },
+        { text: 'Calendario',   icon: <Calendar size={20} />,  path: '/admin-dash' },
+        { text: 'Citas',        icon: <ListCheck size={20} />, path: '/admin-dash/citas' },
+        { text: 'Pacientes',    icon: <Users size={20} />,     path: '/admin-dash/pacientes' },
+        { text: 'Profesionales',icon: <ShieldUser size={20} />,path: '/admin-dash/doctores' },
+        { text: 'Finanzas',      icon: <Coins size={20} />,     path: '/admin-dash/finanzas' },
+        { text: 'Presupuestos', icon: <FileText size={20} />,  path: '/admin-dash/presupuestos' },
+        { text: 'Mi Clínica',   icon: <Settings size={20} />,  path: '/admin-dash/configuraciones' },
     ];
 
     return (
@@ -154,23 +144,29 @@ const AdminSidebar = () => {
 
                 <Divider />
 
-                {/* Info del usuario (opcional) */}
+                {/* Info del usuario + clínica activa */}
                 {open && user && (
                     <Box
                         sx={{
                             px: 2,
                             py: 1.5,
-                            backgroundColor: 'grey.50',
+                            background: 'linear-gradient(135deg, #008DD2, #8cb9ce)',
                             borderBottom: '1px solid',
                             borderColor: 'divider',
                         }}
                     >
-                        <Typography variant="caption" color="text.secondary" display="block">
+                        <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.75)' }} display="block">
                             Bienvenido,
                         </Typography>
-                        <Typography variant="body2" fontWeight={600} noWrap>
+                        <Typography variant="body2" fontWeight={600} noWrap sx={{ color: 'white', mb: 0.5 }}>
                             {user.name || user.email}
                         </Typography>
+                        <TenantSwitcher />
+                        {!activeTenant && (
+                            <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)' }}>
+                                Sin clínica seleccionada
+                            </Typography>
+                        )}
                     </Box>
                 )}
 

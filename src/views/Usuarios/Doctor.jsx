@@ -32,6 +32,7 @@ const Doctor = () => {
     sexd: "",
     phd: "",
     rol: 2,           // 1=Admin, 2=Doctor, 3=Secretario
+    is_admin: false,  // checkbox: también admin de esta clínica
     password: "",     // solo creación
   });
   const [loading, setLoading] = useState(isEditing);
@@ -78,17 +79,19 @@ const Doctor = () => {
   }, [id, token, isEditing]);
 
   const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
     setDoctor((prev) => ({
       ...prev,
-      [e.target.name]: e.target.value,
+      [name]: type === 'checkbox' ? checked : value,
     }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!doctor?.nodoc?.trim()) return mostrarError("El nombre es obligatorio.");
-    if (isCreating && (!doctor?.password?.trim() || doctor.password.length < 6)) {
-      return mostrarError("La contraseña es obligatoria y debe tener al menos 6 caracteres.");
+    // Contraseña requerida solo si es usuario nuevo (el backend lo valida también)
+    if (isCreating && doctor?.password?.trim() && doctor.password.length < 6) {
+      return mostrarError("La contraseña debe tener al menos 6 caracteres.");
     }
 
     setSaving(true);
@@ -408,11 +411,37 @@ const Doctor = () => {
                   </select>
                 </div>
 
+                {/* También admin de esta clínica */}
+                <div className="group sm:col-span-2">
+                  <label className="flex items-center gap-3 cursor-pointer select-none">
+                    <div className="relative flex-shrink-0">
+                      <input
+                        type="checkbox"
+                        name="is_admin"
+                        checked={doctor.is_admin || false}
+                        onChange={handleChange}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 rounded-full border-2 border-gray-300 bg-gray-100 peer-checked:bg-[#008DD2] peer-checked:border-[#008DD2] transition-all duration-200" />
+                      <div className="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-all duration-200 peer-checked:translate-x-5" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-700">También administrador de esta clínica</p>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        Tendrá acceso completo al panel de administración de este consultorio.
+                      </p>
+                    </div>
+                  </label>
+                </div>
+
                 {/* Contraseña - solo creación */}
                 {isCreating && (
                   <div className="group">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Contraseña <span className="text-red-500">*</span>
+                      Contraseña
+                      <span className="ml-1 text-xs text-gray-400 font-normal">
+                        (obligatoria si es usuario nuevo)
+                      </span>
                     </label>
                     <div className="relative">
                       <input

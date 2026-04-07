@@ -442,8 +442,8 @@ export default function AdminChatbot() {
     try {
       // Guardamos flow y builder_state en paralelo
       await Promise.all([
-        clienteAxios.put("/api/chatbot-flow/flow", { flow }),
-        clienteAxios.put("/api/chatbot-flow/builder-state", { builder_state }),
+        clienteAxios.put("/api/superadmin/chatbot-flow/flow", { flow }),
+        clienteAxios.put("/api/superadmin/chatbot-flow/builder-state", { builder_state }),
       ]);
 
       alert("✅ Flow y estado del builder guardados en el servidor");

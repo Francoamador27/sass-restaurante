@@ -3,46 +3,45 @@ import Layout from "./layout/Layout";
 import Inicio from "./views/Inicio";
 import Login from "./views/Login";
 import Register from "./views/Register";
-import Product from "./layout/Product";
 import AuthLayout from "./layout/AuthLayout";
 import MyAccount from "./views/MyAccount";
-import CheckOut from "./views/CheckOut";
-import AdminLayout from "./layout/AdminLayout";
-import Users from "./views/Users";
-import CartAbandoment from "./views/CartAbandoment";
-import DetalleOrden from "./views/DetalleOrden";
-import DetalleProducto from "./views/DetalleProducto";
-import DetalleCliente from "./views/DetalleCliente";
-import ComoComprar from "./components/ComoComprar";
-import Precios from "./components/Precios";
-import Ejemplos from "./components/Ejemplos";
-import PagoResultado from "./views/PagoResultado";
 import NotFound from "./components/NotFound";
 import ResetPassword from "./views/ResetPassword";
 import Contacto from "./components/Contacto";
-import Configuraciones from "./views/Configuraciones";
 import QuienesSomos from "./components/QuienesSomos";
-import EditarCupon from "./components/EditarCupon";
-import TestimoniosForm from "./components/TestimoniosForm";
-import PanelTestimonios from "./components/Testimonios/PanelTestimonios";
-import EjemplosPanel from "./components/EjemplosAdmin/EjemplosPanel";
-import CombosAdmin from "./views/CombosAdmin";
-import CreateProducto from "./views/CreateProducto";
+import Precios from "./components/Precios";
+import Ejemplos from "./components/Ejemplos";
+import ServiciosFront from "./components/ServiciosFront";
+import ServiciosShow from "./components/Servicios/ServiciosShow";
+
+// Admin Dash
+import AdminLayout from "./layout/AdminLayout";
 import Calendario from "./views/Calendario/Calendario";
 import Cita from "./views/Citas/Cita";
+import CitasAdmin from "./views/Citas/CitasAdmin";
 import DoctoresList from "./views/Usuarios/DoctoresList";
 import Doctor from "./views/Usuarios/Doctor";
-import CitasAdmin from "./views/Citas/CitasAdmin";
 import PacientesList from "./views/Usuarios/Pacientes/PacientesList";
 import Paciente from "./views/Usuarios/Pacientes/Paciente";
 import HistorialPaciente from "./views/Usuarios/Pacientes/HistorialPaciente";
-import Servicios from "./views/Servicios";
-import ServiciosFront from "./components/ServiciosFront";
-import ServiciosShow from "./components/Servicios/ServiciosShow";
 import Finanzas from "./components/Finanzas/Finanzas";
-import TratamientosForm from "./views/TratamientosForm";
+import MiClinica from "./views/AdminDash/MiClinica/MiClinica";
+import Presupuestos from "./views/AdminDash/Presupuestos/Presupuestos";
+
+// SuperAdmin Dash
+import SuperAdminLayout from "./layout/SuperAdminLayout";
+import SuperAdminDash from "./views/SuperAdmin/SuperAdminDash";
+import TenantsList from "./views/SuperAdmin/Tenants/TenantsList";
+import CreateAdminForTenant from "./views/SuperAdmin/Tenants/CreateAdminForTenant";
+import SuperAdminTestimonios from "./views/SuperAdmin/Testimonios/SuperAdminTestimonios";
+import SuperAdminEjemplos from "./views/SuperAdmin/Ejemplos/SuperAdminEjemplos";
+import SuperAdminServicios from "./views/SuperAdmin/Servicios/SuperAdminServicios";
 import EditServicios from "./components/Servicios/EditServicios";
-import AdminChatbot from "./views/AdminChatbot";
+import SuperAdminChatbot from "./views/SuperAdmin/Chatbot/SuperAdminChatbot";
+import SuperAdminMailConfig from "./views/SuperAdmin/MailConfig/SuperAdminMailConfig";
+import SuperAdminConfiguraciones from "./views/SuperAdmin/Configuraciones/SuperAdminConfiguraciones";
+import UsuariosList from "./views/SuperAdmin/Usuarios/UsuariosList";
+import TenantSelector from "./views/TenantSelector";
 
 const router = createBrowserRouter([
   {
@@ -52,25 +51,24 @@ const router = createBrowserRouter([
       { index: true, element: <Inicio /> },
       { path: "/servicios", element: <ServiciosFront /> },
       { path: "/servicios/:id", element: <ServiciosShow /> },
-      { path: "/como-comprar", element: <ComoComprar /> },
       { path: "/contacto", element: <Contacto /> },
       { path: "/quienes-somos", element: <QuienesSomos /> },
       { path: "/precios", element: <Precios /> },
       { path: "/ejemplos", element: <Ejemplos /> },
-      { path: "/finalizar-compra", element: <CheckOut /> },
       { path: "auth/login", element: <Login /> },
       { path: "auth/reset-password", element: <ResetPassword /> },
       { path: "auth/register", element: <Register /> },
-      { path: "/pagos/:estado", element: <PagoResultado /> },
-
     ],
+  },
+  {
+    path: "/select-tenant",
+    element: <TenantSelector />,
   },
   {
     path: "/mi-cuenta",
     element: <AuthLayout />,
     children: [
       { index: true, element: <MyAccount /> },
-
     ],
   },
   {
@@ -78,39 +76,33 @@ const router = createBrowserRouter([
     element: <AdminLayout />,
     children: [
       { index: true, element: <Calendario /> },
-      { path: '/admin-dash/citas', element: <CitasAdmin /> },
-      { path: '/admin-dash/citas/:id', element: <Cita /> },
-      { path: "ordenes/:id", element: <DetalleOrden /> }, // /admin-dash/ordenes/15
-      { path: '/admin-dash/combos', element: <CombosAdmin /> },
-      { path: "/admin-dash/productos/editar/:id", element: <DetalleProducto /> }, // /admin-dash/ordenes/15
-      { path: "/admin-dash/clientes/:id", element: <DetalleCliente /> }, // /admin-dash/ordenes/15
-      { path: '/admin-dash/usuarios', element: <Users /> },
-      { path: '/admin-dash/pacientes', element: <PacientesList /> },
-      { path: '/admin-dash/pacientes/:id', element: <Paciente /> },
-      { path: '/admin-dash/pacientes/historial/:id', element: <HistorialPaciente /> },
-      { path: '/admin-dash/doctores', element: <DoctoresList /> },
-      { path: '/admin-dash/doctores/:id', element: <Doctor /> },
-      { path: '/admin-dash/carritos-abandonados', element: <CartAbandoment /> },
-      { path: '/admin-dash/testimonios', element: <PanelTestimonios /> },
-      { path: '/admin-dash/ejemplos', element: <EjemplosPanel /> },
-      { path: '/admin-dash/create-product', element: <CreateProducto /> },
-      { path: '/admin-dash/servicios', element: <Servicios /> },
-      { path: '/admin-dash/servicios/editar/:id', element: <EditServicios /> },
-      { path: '/admin-dash/finanzas', element: <Finanzas  /> },
-
-      {
-        path: "/admin-dash/configuraciones",
-        element: <Configuraciones />
-      },
-      {
-        path: "/admin-dash/chatbot",
-        element: <AdminChatbot  />
-      },
-      {
-        path: "/admin-dash/descuentos/:id",
-        element: <EditarCupon />
-      }
-
+      { path: "/admin-dash/citas", element: <CitasAdmin /> },
+      { path: "/admin-dash/citas/:id", element: <Cita /> },
+      { path: "/admin-dash/pacientes", element: <PacientesList /> },
+      { path: "/admin-dash/pacientes/:id", element: <Paciente /> },
+      { path: "/admin-dash/pacientes/historial/:id", element: <HistorialPaciente /> },
+      { path: "/admin-dash/doctores", element: <DoctoresList /> },
+      { path: "/admin-dash/doctores/:id", element: <Doctor /> },
+      { path: "/admin-dash/finanzas", element: <Finanzas /> },
+      { path: "/admin-dash/configuraciones", element: <MiClinica /> },
+      { path: "/admin-dash/presupuestos", element: <Presupuestos /> },
+    ],
+  },
+  {
+    path: "/superadmin-dash",
+    element: <SuperAdminLayout />,
+    children: [
+      { index: true, element: <SuperAdminDash /> },
+      { path: "/superadmin-dash/tenants", element: <TenantsList /> },
+      { path: "/superadmin-dash/tenants/:id/admin", element: <CreateAdminForTenant /> },
+      { path: "/superadmin-dash/testimonios", element: <SuperAdminTestimonios /> },
+      { path: "/superadmin-dash/ejemplos", element: <SuperAdminEjemplos /> },
+      { path: "/superadmin-dash/servicios", element: <SuperAdminServicios /> },
+      { path: "/superadmin-dash/servicios/editar/:id", element: <EditServicios /> },
+      { path: "/superadmin-dash/chatbot", element: <SuperAdminChatbot /> },
+      { path: "/superadmin-dash/mail-config", element: <SuperAdminMailConfig /> },
+      { path: "/superadmin-dash/configuraciones", element: <SuperAdminConfiguraciones /> },
+      { path: "/superadmin-dash/usuarios", element: <UsuariosList /> },
     ],
   },
   {

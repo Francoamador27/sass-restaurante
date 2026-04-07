@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(php artisan:*)",
+      "Bash(npm run:*)",
+      "Bash(php artisan tinker --execute=\":*)",
+      "Bash(xargs grep:*)",
+      "Bash(npm install:*)",
+      "Read(//c/Users/Franco/.claude/projects/c--Users-Franco-Desktop-PROYECTOS-PERSONALES-DentalCoreSoftware-DentalCorsoftware/memory/**)"
+    ],
+    "additionalDirectories": [
+      "c:\\laragon\\www\\back-dentalcorsoftware\\app"
+    ]
+  }
+}

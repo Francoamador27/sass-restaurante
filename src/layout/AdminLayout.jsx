@@ -1,26 +1,37 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import AdminSidebar from '../components/AdminSidebar';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import UseAuth from '../hooks/useAuth';
+import TenantBlockedScreen from '../views/AdminDash/TenantBlockedScreen';
 
 const AdminLayout = () => {
     const { user, error } = UseAuth({ middleware: 'auth' });
     const navigate = useNavigate();
 
+    const [blocked, setBlocked] = useState(
+        () => !!sessionStorage.getItem('TENANT_BLOCKED')
+    );
+
     useEffect(() => {
-        if (user && user.admin !== 1) {
+        const handler = () => setBlocked(true);
+        window.addEventListener('tenant-blocked', handler);
+        return () => window.removeEventListener('tenant-blocked', handler);
+    }, []);
+
+    useEffect(() => {
+        if (user && user.role !== 'admin') {
             navigate('/');
         }
     }, [user, navigate]);
 
     if (!user && !error) return <p>Cargando...</p>;
+    if (!user || user.role !== 'admin') return null;
 
-    if (!user || user.admin !== 1) return null; // ya redirige
+    if (blocked) return <TenantBlockedScreen />;
 
     return (
         <div className="admin-layout">
             <AdminSidebar />
-           
         </div>
     );
 };

@@ -41,7 +41,7 @@ const ServiciosList = () => {
     if (!window.confirm('¿Seguro que querés eliminar este servicio?')) return;
 
     try {
-      await clienteAxios.delete(`/api/servicios/${id}`, {
+      await clienteAxios.delete(`/api/superadmin/servicios/${id}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       // Refresca la tabla
@@ -167,7 +167,7 @@ const ServiciosList = () => {
                 </td>
                 <td className="px-4 py-3 flex gap-2">
                   <Link
-                    to={`/admin-dash/servicios/editar/${s.id}`}
+                    to={`/superadmin-dash/servicios/editar/${s.id}`}
                     className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1 rounded"
                   >
                     Editar

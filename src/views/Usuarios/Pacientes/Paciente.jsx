@@ -3,6 +3,9 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import clienteAxios from "../../../config/axios";
 import { mostrarError, mostrarExito } from "../../../utils/Alertas";
+import { usePatientLookup } from "./hooks/usePatientLookup";
+import LookupStatusBadge from "./componentes/LookupStatusBadge";
+import PatientImportModal from "./componentes/PatientImportModal";
 
 const toYMD = (val) => {
   if (!val) return "";
@@ -44,6 +47,11 @@ const Paciente = () => {
   const [loading, setLoading] = useState(isEditing);
   const [saving, setSaving] = useState(false);
   const [errMsg, setErrMsg] = useState("");
+
+  // ── Lookup cross-tenant (solo en modo creación) ──────────────────────────
+  const { status: lookupStatus, foundData, triggerLookup, reset: resetLookup } = usePatientLookup();
+  // Cuando el usuario importa desde el modal, guardamos los IDs para el payload
+  const [importMeta, setImportMeta] = useState(null); // { import_user_id, source_patient_id }
 
   // Cargar datos solo si estamos editando
   useEffect(() => {
@@ -108,7 +116,8 @@ const Paciente = () => {
     // Validaciones mínimas
     if (!paciente?.nompa?.trim()) return mostrarError("El nombre es obligatorio.");
     if (!paciente?.email?.trim()) return mostrarError("El email es obligatorio.");
-    if (isCreating && (!paciente?.password?.trim() || paciente.password.length < 6)) {
+    // Al importar no se requiere contraseña (el user ya tiene una)
+    if (isCreating && !importMeta && (!paciente?.password?.trim() || paciente.password.length < 6)) {
       return mostrarError("La contraseña es obligatoria y debe tener al menos 6 caracteres.");
     }
 
@@ -141,8 +150,13 @@ const Paciente = () => {
           : (paciente.password?.trim() ? { password: paciente.password } : {})),
       };
 
-      // 👉 Unificar en un solo payload si tu endpoint /api/pacientes espera todo junto
-      const payload = { ...patientPayload, ...userPayload };
+      // 👉 Unificar en un solo payload
+      const payload = {
+        ...patientPayload,
+        ...userPayload,
+        // Incluir metadatos de importación si aplica
+        ...(importMeta ?? {}),
+      };
 
       // Si tu backend espera objetos separados, usa en su lugar:
       // const payload = { patient: patientPayload, user: userPayload };
@@ -228,6 +242,7 @@ const Paciente = () => {
 
   // Render principal
   return (
+    <>
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-6">
       <div className="max-w-4xl mx-auto">
         <div className="bg-white rounded-3xl shadow-xl border border-slate-200/60 overflow-hidden">
@@ -311,10 +326,15 @@ const Paciente = () => {
                     type="text"
                     name="dni"
                     value={paciente.dni || ""}
-                    onChange={handleChange}
+                    onChange={(e) => { handleChange(e); resetLookup(); setImportMeta(null); }}
+                    onBlur={(e) => {
+                      if (isCreating && e.target.value.trim().length >= 4)
+                        triggerLookup({ dni: e.target.value });
+                    }}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 hover:border-gray-400 bg-gray-50 focus:bg-white"
                     placeholder="12345678"
                   />
+                  {isCreating && <LookupStatusBadge status={lookupStatus} />}
                 </div>
 
                 {/* Sexo */}
@@ -393,11 +413,16 @@ const Paciente = () => {
                     type="email"
                     name="email"
                     value={paciente.email || ""}
-                    onChange={handleChange}
+                    onChange={(e) => { handleChange(e); resetLookup(); setImportMeta(null); }}
+                    onBlur={(e) => {
+                      if (isCreating && e.target.value.trim().length >= 4)
+                        triggerLookup({ email: e.target.value });
+                    }}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 hover:border-gray-400 bg-gray-50 focus:bg-white"
                     placeholder="correo@ejemplo.com"
                     required
                   />
+                  {isCreating && <LookupStatusBadge status={lookupStatus} />}
                 </div>
 
                 {/* Rol */}
@@ -514,6 +539,36 @@ const Paciente = () => {
         </div>
       </div>
     </div>
+
+    {/* Modal de importación cross-tenant */}
+    {isCreating && lookupStatus === 'found' && foundData && (
+      <PatientImportModal
+        foundData={foundData}
+        onConfirm={(data) => {
+          // Pre-llenar el formulario con los datos del modal
+          setPaciente(prev => ({
+            ...prev,
+            nompa: data.nompa  || prev.nompa,
+            apepa: data.apepa  || prev.apepa,
+            email: data.email  || prev.email,
+            dni:   data.dni    || prev.dni,
+            phon:  data.phon   || prev.phon,
+            direc: data.direc  || prev.direc,
+            sex:   data.sex    || prev.sex,
+            cump:  data.cump   || prev.cump,
+            grup:  data.grup   || prev.grup,
+          }));
+          // Guardar metadatos para el payload del POST
+          setImportMeta({
+            import_user_id:    data.import_user_id,
+            source_patient_id: data.source_patient_id,
+          });
+          resetLookup();
+        }}
+        onClose={() => resetLookup()}
+      />
+    )}
+    </>
   );
 };
 
