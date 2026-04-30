@@ -44,6 +44,8 @@ const UseAuth = ({ middleware, url }) => {
   const selectTenant = (tenant) => {
     localStorage.setItem('ACTIVE_TENANT', JSON.stringify(tenant));
     setActiveTenant(tenant);
+    // Limpiar estado de bloqueo del tenant anterior
+    sessionStorage.removeItem('TENANT_BLOCKED');
   };
 
   // ── Login ────────────────────────────────────────────────────────────────
@@ -115,6 +117,7 @@ const UseAuth = ({ middleware, url }) => {
       localStorage.removeItem('AUTH_TOKEN');
       localStorage.removeItem('TENANTS');
       localStorage.removeItem('ACTIVE_TENANT');
+      sessionStorage.removeItem('TENANT_BLOCKED');
       delete clienteAxios.defaults.headers.common['Authorization'];
 
       setTenants([]);

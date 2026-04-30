@@ -24,20 +24,74 @@ const Doctor = () => {
     nodoc: "",
     apdoc: "",
     ceddoc: "",
-    nacd: "",          // guardamos SIEMPRE como YYYY-MM-DD
+    nacd: "", // guardamos SIEMPRE como YYYY-MM-DD
     nomesp: "",
     username: "",
-    corr: "",
+    email: "",
     color: "#008dd2",
     sexd: "",
     phd: "",
-    rol: 2,           // 1=Admin, 2=Doctor, 3=Secretario
-    is_admin: false,  // checkbox: también admin de esta clínica
-    password: "",     // solo creación
+    rol: 2, // 1=Admin, 2=Doctor, 3=Secretario
+    is_admin: false, // checkbox: también admin de esta clínica
+    password: "", // solo creación
+    user_id: null, // id del usuario existente (si se asigna admin)
   });
   const [loading, setLoading] = useState(isEditing);
   const [saving, setSaving] = useState(false);
   const [errMsg, setErrMsg] = useState("");
+
+  // ── Asignar admin existente ─────────────────────────────────────────────
+  const [assignExisting, setAssignExisting] = useState(false);
+  const [availableAdmins, setAvailableAdmins] = useState([]);
+  const [loadingAdmins, setLoadingAdmins] = useState(false);
+
+  // Cargar admins disponibles cuando se activa el toggle
+  useEffect(() => {
+    if (!isCreating || !assignExisting) return;
+    setLoadingAdmins(true);
+    clienteAxios
+      .get("/api/doctores/admins-disponibles", {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then(({ data }) => setAvailableAdmins(data.data || []))
+      .catch(() => setAvailableAdmins([]))
+      .finally(() => setLoadingAdmins(false));
+  }, [assignExisting, isCreating, token]);
+
+  const handleSelectAdmin = (e) => {
+    const userId = Number(e.target.value);
+    if (!userId) {
+      // Deseleccionó → limpiar campos vinculados
+      setDoctor((prev) => ({
+        ...prev,
+        user_id: null,
+        email: "",
+        nodoc: "",
+        apdoc: "",
+        phd: "",
+        ceddoc: "",
+      }));
+      return;
+    }
+    const admin = availableAdmins.find((a) => a.id === userId);
+    if (!admin) return;
+
+    // Separar name en nombre y apellido (best-effort)
+    const parts = (admin.name || "").trim().split(/\s+/);
+    const nodoc = parts[0] || "";
+    const apdoc = parts.slice(1).join(" ") || "";
+
+    setDoctor((prev) => ({
+      ...prev,
+      user_id: admin.id,
+      email: admin.email || "",
+      nodoc,
+      apdoc,
+      phd: admin.telefono || "",
+      ceddoc: admin.dni || "",
+      is_admin: true,
+    }));
+  };
 
   // Cargar datos solo si estamos editando
   useEffect(() => {
@@ -55,21 +109,23 @@ const Doctor = () => {
           nodoc: d.nodoc || "",
           apdoc: d.apdoc || "",
           ceddoc: d.ceddoc || "",
-          nacd: toYMD(d.nacd),                 // 👈 formateo para el input date
+          nacd: toYMD(d.nacd), // 👈 formateo para el input date
           nomesp: d.nomesp || "",
           username: d.username || "",
-          corr: d.corr || "",
+          email: d.user?.email || d.corr || "",
           color: d.color || "#008dd2",
           sexd: d.sexd || "",
           phd: d.phd || "",
           rol: d.rol ?? 2,
+          is_admin: false,
           password: "", // no se edita aquí
+          user_id: d.user_id || null,
         });
       } catch (error) {
         console.error("Error al cargar el doctor:", error);
         setErrMsg(
           error?.response?.data?.message ||
-          "No se pudo cargar la información del doctor."
+            "No se pudo cargar la información del doctor.",
         );
       } finally {
         setLoading(false);
@@ -82,15 +138,21 @@ const Doctor = () => {
     const { name, value, type, checked } = e.target;
     setDoctor((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value,
+      [name]: type === "checkbox" ? checked : value,
     }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!doctor?.nodoc?.trim()) return mostrarError("El nombre es obligatorio.");
-    // Contraseña requerida solo si es usuario nuevo (el backend lo valida también)
-    if (isCreating && doctor?.password?.trim() && doctor.password.length < 6) {
+    if (!doctor?.nodoc?.trim())
+      return mostrarError("El nombre es obligatorio.");
+    // Contraseña requerida solo si es usuario nuevo (no vinculado a existente)
+    if (
+      isCreating &&
+      !doctor.user_id &&
+      doctor?.password?.trim() &&
+      doctor.password.length < 6
+    ) {
       return mostrarError("La contraseña debe tener al menos 6 caracteres.");
     }
 
@@ -115,14 +177,18 @@ const Doctor = () => {
         await clienteAxios.put(`/api/doctores/${id}`, payload, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        mostrarExito("Doctor actualizado correctamente");}
+        mostrarExito("Doctor actualizado correctamente");
+      }
       navigate("/admin-dash/doctores");
     } catch (error) {
       console.error(error);
       const firstError =
         error?.response?.data?.errors &&
         Object.values(error.response.data.errors)[0]?.[0];
-      setErrMsg(firstError || `Error al ${isCreating ? "crear" : "actualizar"} el doctor.`);
+      setErrMsg(
+        firstError ||
+          `Error al ${isCreating ? "crear" : "actualizar"} el doctor.`,
+      );
     } finally {
       setSaving(false);
     }
@@ -162,11 +228,23 @@ const Doctor = () => {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-6 flex items-center justify-center">
         <div className="max-w-md mx-auto bg-white rounded-3xl shadow-xl border border-slate-200/60 p-8 text-center">
           <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            <svg
+              className="w-8 h-8 text-red-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+              />
             </svg>
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Doctor no encontrado</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            Doctor no encontrado
+          </h3>
           {errMsg && (
             <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm">
               {errMsg}
@@ -192,10 +270,14 @@ const Doctor = () => {
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-2xl font-bold text-white">
-                  {isCreating ? "Crear Nuevo Doctor" : `Editar:  ${doctor.nodoc} ${doctor.apdoc ? doctor.apdoc : ""}`}
+                  {isCreating
+                    ? "Crear Nuevo Doctor"
+                    : `Editar:  ${doctor.nodoc} ${doctor.apdoc ? doctor.apdoc : ""}`}
                 </h2>
                 <p className="text-blue-100 mt-1">
-                  {isCreating ? "Complete la información del nuevo doctor" : `ID: ${id}`}
+                  {isCreating
+                    ? "Complete la información del nuevo doctor"
+                    : `ID: ${id}`}
                 </p>
               </div>
               <div className="flex items-center gap-3">
@@ -204,7 +286,8 @@ const Doctor = () => {
                   className="w-12 h-12 rounded-xl border-2 border-white/30 shadow-lg"
                   style={{
                     background:
-                      doctor.color && /^#([0-9a-f]{6}|[0-9a-f]{8})$/i.test(doctor.color)
+                      doctor.color &&
+                      /^#([0-9a-f]{6}|[0-9a-f]{8})$/i.test(doctor.color)
                         ? doctor.color
                         : "linear-gradient(135deg, #f3f4f6, #e5e7eb)",
                   }}
@@ -217,8 +300,18 @@ const Doctor = () => {
           {/* Error global */}
           {errMsg && (
             <div className="mx-8 mt-6 p-4 rounded-xl bg-red-50 border border-red-200 flex items-start gap-3">
-              <svg className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              <svg
+                className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+                />
               </svg>
               <div>
                 <h4 className="font-medium text-red-800">Error</h4>
@@ -233,11 +326,23 @@ const Doctor = () => {
             <div className="space-y-6">
               <div className="flex items-center gap-3 pb-2 border-b border-gray-200">
                 <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  <svg
+                    className="w-4 h-4 text-blue-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                    />
                   </svg>
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900">Información Personal</h3>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Información Personal
+                </h3>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -259,7 +364,9 @@ const Doctor = () => {
 
                 {/* Apellido */}
                 <div className="group">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Apellido</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Apellido
+                  </label>
                   <input
                     type="text"
                     name="apdoc"
@@ -272,7 +379,9 @@ const Doctor = () => {
 
                 {/* DNI */}
                 <div className="group">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">DNI / Cédula</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    DNI / Cédula
+                  </label>
                   <input
                     type="text"
                     name="ceddoc"
@@ -285,25 +394,39 @@ const Doctor = () => {
 
                 {/* Fecha de nacimiento */}
                 <div className="group">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Fecha de nacimiento</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Fecha de nacimiento
+                  </label>
                   <div className="relative">
                     <input
                       type="date"
                       name="nacd"
-                      value={doctor.nacd || ""}   // 👈 ya viene YYYY-MM-DD
+                      value={doctor.nacd || ""} // 👈 ya viene YYYY-MM-DD
                       onChange={handleChange}
                       className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 ease-in-out hover:border-gray-400 bg-gray-50 focus:bg-white group-hover:shadow-sm"
                       max={new Date().toISOString().split("T")[0]}
                     />
-                    <svg className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    <svg
+                      className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                      />
                     </svg>
                   </div>
                 </div>
 
                 {/* Especialidad */}
                 <div className="group">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Especialidad</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Especialidad
+                  </label>
                   <input
                     type="text"
                     name="nomesp"
@@ -316,7 +439,9 @@ const Doctor = () => {
 
                 {/* Sexo */}
                 <div className="group">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Sexo</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Sexo
+                  </label>
                   <select
                     name="sexd"
                     value={doctor.sexd || ""}
@@ -332,7 +457,9 @@ const Doctor = () => {
 
                 {/* Teléfono */}
                 <div className="group">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Teléfono</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Teléfono
+                  </label>
                   <input
                     type="text"
                     name="phd"
@@ -349,46 +476,127 @@ const Doctor = () => {
             <div className="space-y-6">
               <div className="flex items-center gap-3 pb-2 border-b border-gray-200">
                 <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                  <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 7a2 2 0 012 2m0 0v6a2 2 0 01-2 2H9a2 2 0 01-2-2V9a2 2 0 012-2m6 0V7a2 2 0 00-2-2H9a2 2 0 00-2 2v2m6 0H9" />
+                  <svg
+                    className="w-4 h-4 text-green-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M15 7a2 2 0 012 2m0 0v6a2 2 0 01-2 2H9a2 2 0 01-2-2V9a2 2 0 012-2m6 0V7a2 2 0 00-2-2H9a2 2 0 00-2 2v2m6 0H9"
+                    />
                   </svg>
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900">Información de Acceso</h3>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Información de Acceso
+                </h3>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Username */}
-                {/* <div className="group">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Nombre de usuario</label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      name="username"
-                      value={doctor.username || ""}
-                      onChange={handleChange}
-                      className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 hover:border-gray-400 bg-gray-50 focus:bg-white group-hover:shadow-sm"
-                      placeholder="usuario.login"
-                    />
-                    <svg className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                  </div>
-                </div> */}
+              {/* Toggle: Asignar admin existente */}
+              {isCreating && (
+                <div className="group">
+                  <label className="flex items-center gap-3 cursor-pointer select-none">
+                    <div className="relative flex-shrink-0">
+                      <input
+                        type="checkbox"
+                        checked={assignExisting}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setAssignExisting(checked);
+                          if (!checked) {
+                            setDoctor((prev) => ({
+                              ...prev,
+                              user_id: null,
+                              email: "",
+                              nodoc: "",
+                              apdoc: "",
+                              phd: "",
+                              ceddoc: "",
+                            }));
+                          }
+                        }}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 rounded-full border-2 border-gray-300 bg-gray-100 peer-checked:bg-indigo-500 peer-checked:border-indigo-500 transition-all duration-200" />
+                      <div className="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-all duration-200 peer-checked:translate-x-5" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-700">
+                        Asignar un administrador existente como Doctor
+                      </p>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        Si el doctor ya es admin de esta clínica, seleccionalo
+                        para vincular su cuenta.
+                      </p>
+                    </div>
+                  </label>
+                </div>
+              )}
 
+              {/* Selector de admin existente */}
+              {isCreating && assignExisting && (
+                <div className="group">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Seleccionar administrador
+                  </label>
+                  {loadingAdmins ? (
+                    <p className="text-sm text-gray-400">
+                      Cargando administradores...
+                    </p>
+                  ) : availableAdmins.length === 0 ? (
+                    <p className="text-sm text-gray-500">
+                      No hay administradores disponibles para asignar como
+                      doctor.
+                    </p>
+                  ) : (
+                    <select
+                      value={doctor.user_id || ""}
+                      onChange={handleSelectAdmin}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 bg-gray-50 focus:bg-white"
+                    >
+                      <option value="">Seleccione un administrador...</option>
+                      {availableAdmins.map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.name} — {a.email}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Email */}
                 <div className="group">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Correo electrónico</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Correo electrónico{" "}
+                    {!assignExisting && <span className="text-red-500">*</span>}
+                  </label>
                   <div className="relative">
                     <input
                       type="email"
-                      name="corr"
-                      value={doctor.corr || ""}
+                      name="email"
+                      value={doctor.email || ""}
                       onChange={handleChange}
-                      className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 hover:border-gray-400 bg-gray-50 focus:bg-white group-hover:shadow-sm"
+                      className={`w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 hover:border-gray-400 group-hover:shadow-sm ${assignExisting && doctor.user_id ? "bg-gray-100 text-gray-500" : "bg-gray-50 focus:bg-white"}`}
                       placeholder="correo@ejemplo.com"
+                      readOnly={!!(assignExisting && doctor.user_id)}
                     />
-                    <svg className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    <svg
+                      className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                      />
                     </svg>
                   </div>
                 </div>
@@ -426,16 +634,19 @@ const Doctor = () => {
                       <div className="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-all duration-200 peer-checked:translate-x-5" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-700">También administrador de esta clínica</p>
+                      <p className="text-sm font-medium text-gray-700">
+                        También administrador de esta clínica
+                      </p>
                       <p className="text-xs text-gray-400 mt-0.5">
-                        Tendrá acceso completo al panel de administración de este consultorio.
+                        Tendrá acceso completo al panel de administración de
+                        este consultorio.
                       </p>
                     </div>
                   </label>
                 </div>
 
-                {/* Contraseña - solo creación */}
-                {isCreating && (
+                {/* Contraseña - solo creación y solo si NO es usuario existente */}
+                {isCreating && !doctor.user_id && (
                   <div className="group">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Contraseña
@@ -451,11 +662,20 @@ const Doctor = () => {
                         onChange={handleChange}
                         className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 hover:border-gray-400 bg-gray-50 focus:bg-white group-hover:shadow-sm"
                         placeholder="••••••••"
-                        required={isCreating}
                         minLength={6}
                       />
-                      <svg className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                      <svg
+                        className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                        />
                       </svg>
                     </div>
                     <p className="text-xs text-gray-500 mt-1">
@@ -470,15 +690,29 @@ const Doctor = () => {
             <div className="space-y-6">
               <div className="flex items-center gap-3 pb-2 border-b border-gray-200">
                 <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                  <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5a2 2 0 00-2-2h-4a2 2 0 00-2 2v12a4 4 0 004 4h4a2 2 0 002-2V5z" />
+                  <svg
+                    className="w-4 h-4 text-purple-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5a2 2 0 00-2-2h-4a2 2 0 00-2 2v12a4 4 0 004 4h4a2 2 0 002-2V5z"
+                    />
                   </svg>
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900">Color de identificación</h3>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Color de identificación
+                </h3>
               </div>
 
               <div className="group">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Color personalizado</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Color personalizado
+                </label>
                 <div className="flex items-center gap-4">
                   <input
                     type="text"
@@ -490,8 +724,14 @@ const Doctor = () => {
                   />
                   <input
                     type="color"
-                    value={/^#([0-9a-f]{6})$/i.test(doctor.color || "") ? doctor.color : "#008dd2"}
-                    onChange={(e) => setDoctor((prev) => ({ ...prev, color: e.target.value }))}
+                    value={
+                      /^#([0-9a-f]{6})$/i.test(doctor.color || "")
+                        ? doctor.color
+                        : "#008dd2"
+                    }
+                    onChange={(e) =>
+                      setDoctor((prev) => ({ ...prev, color: e.target.value }))
+                    }
                     className="w-16 h-12 border-2 border-gray-300 rounded-xl cursor-pointer hover:border-gray-400 transition-colors"
                     title="Selector de color"
                   />
@@ -499,7 +739,8 @@ const Doctor = () => {
                     className="w-12 h-12 rounded-xl border-2 border-gray-300 shadow-inner"
                     style={{
                       background:
-                        doctor.color && /^#([0-9a-f]{6}|[0-9a-f]{8})$/i.test(doctor.color)
+                        doctor.color &&
+                        /^#([0-9a-f]{6}|[0-9a-f]{8})$/i.test(doctor.color)
                           ? doctor.color
                           : "linear-gradient(135deg, #f3f4f6, #e5e7eb)",
                     }}
@@ -507,7 +748,8 @@ const Doctor = () => {
                   />
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
-                  Este color se usará para identificar al doctor en el calendario y reportes.
+                  Este color se usará para identificar al doctor en el
+                  calendario y reportes.
                 </p>
               </div>
             </div>
@@ -525,10 +767,17 @@ const Doctor = () => {
               <button
                 type="submit"
                 disabled={saving}
-                className={`inline-flex items-center gap-2 px-8 py-3 rounded-xl text-white font-medium transition-all duration-200 ${saving ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700 hover:shadow-lg transform hover:-translate-y-0.5"
-                  }`}
+                className={`inline-flex items-center gap-2 px-8 py-3 rounded-xl text-white font-medium transition-all duration-200 ${
+                  saving
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-blue-600 hover:bg-blue-700 hover:shadow-lg transform hover:-translate-y-0.5"
+                }`}
               >
-                {saving ? "Guardando…" : isCreating ? "Crear doctor" : "Guardar cambios"}
+                {saving
+                  ? "Guardando…"
+                  : isCreating
+                    ? "Crear doctor"
+                    : "Guardar cambios"}
               </button>
             </div>
           </form>

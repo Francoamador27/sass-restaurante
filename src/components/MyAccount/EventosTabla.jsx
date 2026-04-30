@@ -1,31 +1,60 @@
-import React from 'react';
-import useSWR from 'swr';
-import clienteAxios from '../../config/axios';
-import { fmtDMYHM } from '../../utils/date'; // 👈 tu función
-import { formatDate } from '../../utils/formatDate';
+import React from "react";
+import useSWR from "swr";
+import clienteAxios from "../../config/axios";
+import { fmtDMYHM } from "../../utils/date"; // 👈 tu función
+import { formatDate } from "../../utils/formatDate";
 
 const EventosTabla = () => {
-  const token = localStorage.getItem('AUTH_TOKEN');
+  const token = localStorage.getItem("AUTH_TOKEN");
 
   const fetcherGet = (url) =>
-    clienteAxios.get(url, { headers: { Authorization: `Bearer ${token}` } })
-      .then(res => res.data);
+    clienteAxios
+      .get(url, { headers: { Authorization: `Bearer ${token}` } })
+      .then((res) => res.data);
 
-  const { data, error, isLoading } = useSWR('/api/user/events', fetcherGet);
+  const { data, error, isLoading } = useSWR("/api/user/events", fetcherGet);
 
   const eventos = data?.data ?? [];
   const paciente = data?.patient ?? null;
 
-  if (isLoading) return <p className="text-sm text-gray-500">Cargando eventos...</p>;
-  if (error) return <p className="text-sm text-red-500">Error al cargar eventos.</p>;
-  if (!paciente) return <p className="text-gray-600 text-sm">No se encontró paciente asociado.</p>;
-  if (eventos.length === 0) return <p className="text-gray-600 text-sm">No tenés eventos registrados aún.</p>;
+  const handleDownloadIcs = (eventId) => {
+    const activeTenant = JSON.parse(
+      localStorage.getItem("ACTIVE_TENANT") || "null",
+    );
+    clienteAxios
+      .get(`/api/events/${eventId}/ics`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          ...(activeTenant?.id ? { "X-Tenant-ID": activeTenant.id } : {}),
+        },
+        responseType: "blob",
+      })
+      .then((res) => {
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(res.data);
+        a.download = `turno-${eventId}.ics`;
+        a.click();
+        URL.revokeObjectURL(a.href);
+      })
+      .catch(() => alert("No se pudo descargar el archivo .ics"));
+  };
+
+  if (isLoading)
+    return <p className="text-sm text-gray-500">Cargando eventos...</p>;
+  if (error)
+    return <p className="text-sm text-red-500">Error al cargar eventos.</p>;
+  if (!paciente)
+    return (
+      <p className="text-gray-600 text-sm">No se encontró paciente asociado.</p>
+    );
+  if (eventos.length === 0)
+    return (
+      <p className="text-gray-600 text-sm">No tenés eventos registrados aún.</p>
+    );
 
   return (
     <div className="overflow-x-auto mt-4">
-      <h2 className="text-lg font-semibold mb-3">
-        Eventos de {paciente.name}
-      </h2>
+      <h2 className="text-lg font-semibold mb-3">Eventos de {paciente.name}</h2>
       <table className="min-w-full text-sm text-gray-800">
         <thead className="bg-gray-100 text-xs text-gray-600 uppercase">
           <tr>
@@ -34,25 +63,38 @@ const EventosTabla = () => {
             <th className="px-4 py-2 text-left">Monto</th>
             <th className="px-4 py-2 text-left">Pagado</th>
             <th className="px-4 py-2 text-left">Fecha</th>
+            <th className="px-4 py-2 text-left">Calendario</th>
           </tr>
         </thead>
         <tbody>
-          {eventos.map(event => (
+          {eventos.map((event) => (
             <tr key={event.id} className="border-b hover:bg-gray-50">
               <td className="px-4 py-2">{event.title}</td>
               <td className="px-4 py-2">
-                {event.doctor_name} {event.doctor_lastname || ''}
+                {event.doctor_name} {event.doctor_lastname || ""}
               </td>
               <td className="px-4 py-2">
-                {event.monto ? `$${parseFloat(event.monto).toLocaleString('es-AR')}` : '-'}
+                {event.monto
+                  ? `$${parseFloat(event.monto).toLocaleString("es-AR")}`
+                  : "-"}
               </td>
               <td className="px-4 py-2">
-                {event.isPaid || event.chec
-                  ? <span className="text-green-600 font-medium">Sí</span>
-                  : <span className="text-red-500 font-medium">No</span>
-                }
+                {event.isPaid || event.chec ? (
+                  <span className="text-green-600 font-medium">Sí</span>
+                ) : (
+                  <span className="text-red-500 font-medium">No</span>
+                )}
               </td>
-                  <td className="px-4 py-3">{formatDate(event.start)}</td>
+              <td className="px-4 py-3">{formatDate(event.start)}</td>
+              <td className="px-4 py-2">
+                <button
+                  onClick={() => handleDownloadIcs(event.id)}
+                  className="text-xs text-[#008DD2] hover:underline cursor-pointer"
+                  title="Descargar .ics para agregar a tu calendario"
+                >
+                  📅 Sincronizar
+                </button>
+              </td>
             </tr>
           ))}
         </tbody>
