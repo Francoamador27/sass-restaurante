@@ -8,6 +8,7 @@ const fmt = (n) => Number(n || 0).toLocaleString('es-AR', { minimumFractionDigit
 
 const ESTADO_CONFIG = {
     borrador:  { label: 'Borrador',  icon: <Clock size={12} />,        cls: 'bg-slate-100 text-slate-600' },
+    publicado: { label: 'Publicado', icon: <CheckCircle size={12} />,   cls: 'bg-blue-50 text-blue-600' },
     enviado:   { label: 'Enviado',   icon: <Send size={12} />,          cls: 'bg-blue-50 text-blue-600' },
     aceptado:  { label: 'Aceptado',  icon: <CheckCircle size={12} />,   cls: 'bg-green-50 text-green-600' },
     rechazado: { label: 'Rechazado', icon: <XCircle size={12} />,       cls: 'bg-red-50 text-red-500' },

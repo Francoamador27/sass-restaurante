@@ -10,15 +10,17 @@ const PatientImportModal = ({ foundData, onConfirm, onClose }) => {
 
     const handleConfirm = () => {
         onConfirm({
-            email:   foundData.email,
-            nompa:   foundData.nompa,
-            apepa:   foundData.apepa  ?? '',
-            phon:    foundData.phon   ?? '',
-            direc:   foundData.direc  ?? '',
-            sex:     foundData.sex    ?? '',
-            cump:    foundData.cump   ?? '',
-            grup:    foundData.grup   ?? '',
-            dni:     foundData.dni    ?? '',
+            email:             foundData.email,
+            nompa:             foundData.nompa,
+            apepa:             foundData.apepa  ?? '',
+            phon:              foundData.phon   ?? '',
+            direc:             foundData.direc  ?? '',
+            sex:               foundData.sex    ?? '',
+            cump:              foundData.cump   ?? '',
+            grup:              foundData.grup   ?? '',
+            dni:               foundData.dni    ?? '',
+            import_user_id:    foundData.user_id,
+            source_patient_id: foundData.source_patient_id,
         });
     };
 

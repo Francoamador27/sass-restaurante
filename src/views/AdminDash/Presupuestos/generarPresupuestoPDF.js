@@ -19,6 +19,7 @@ const C = {
 
 const ESTADO_BADGE = {
     borrador:  { bg: C.slate300, text: C.white, label: 'BORRADOR' },
+    publicado: { bg: C.blue,     text: C.white, label: 'PUBLICADO' },
     enviado:   { bg: C.blue,     text: C.white, label: 'ENVIADO'  },
     aceptado:  { bg: C.green,    text: C.white, label: 'ACEPTADO' },
     rechazado: { bg: C.red,      text: C.white, label: 'RECHAZADO'},
@@ -90,20 +91,19 @@ export const generarPresupuestoPDF = async (presupuesto, clinica) => {
     const logoImg = await loadImg(clinica?.logo);
 
     // ══════════════════════════════════════════════════════════════════════════
-    // HEADER — fondo oscuro con degradado simulado
+    // HEADER — fondo blanco para impresoras B&N
     // ══════════════════════════════════════════════════════════════════════════
     const hH = 52; // altura header
 
-    // Fondo oscuro principal
-    fill(doc, C.dark); doc.rect(0, 0, W, hH, 'F');
+    // Fondo blanco principal
+    fill(doc, C.white); doc.rect(0, 0, W, hH, 'F');
 
     // Banda de acento azul en la base del header
     fill(doc, C.primary); doc.rect(0, hH - 3, W, 3, 'F');
 
     // Línea decorativa sutil en el medio del header
-    doc.setDrawColor(255, 255, 255); doc.setLineWidth(0.08); doc.setGState(new doc.GState({ opacity: 0.05 }));
+    stroke(doc, C.slate300); doc.setLineWidth(0.5);
     doc.line(mg, hH / 2, W - mg, hH / 2);
-    doc.setGState(new doc.GState({ opacity: 1 }));
 
     // ── Logo de la clínica ───────────────────────────────────────────────────
     let textStartX = mg;
@@ -121,20 +121,20 @@ export const generarPresupuestoPDF = async (presupuesto, clinica) => {
 
     // ── Nombre de la clínica ─────────────────────────────────────────────────
     const clinicName = clinica?.clinic_name || 'Clínica Dental';
-    color(doc, C.white);
+    color(doc, C.slate700);
     font(doc, 15, 'bold');
     doc.text(truncate(doc, clinicName, 80), textStartX, 16);
 
     // Datos de contacto
     font(doc, 7.5);
-    color(doc, [170, 200, 220]);
+    color(doc, C.slate700);
     const contactParts = [];
     if (clinica?.phone)   contactParts.push(`Tel: ${clinica.phone}`);
     if (clinica?.email)   contactParts.push(clinica.email);
     if (clinica?.address) contactParts.push(clinica.address);
     if (contactParts.length) doc.text(contactParts.join('  ·  '), textStartX, 23);
     if (clinica?.whatsapp) {
-        color(doc, [100, 200, 255]);
+        color(doc, C.slate700);
         doc.text(`WhatsApp: ${clinica.whatsapp}`, textStartX, 30);
     }
 
@@ -142,11 +142,11 @@ export const generarPresupuestoPDF = async (presupuesto, clinica) => {
     const rightX = W - mg;
 
     font(doc, 15, 'bold');
-    color(doc, C.white);
+    color(doc, C.slate700);
     doc.text('PRESUPUESTO', rightX, 16, { align: 'right' });
 
     font(doc, 9);
-    color(doc, [170, 200, 220]);
+    color(doc, C.slate700);
     doc.text(`N° ${presupuesto.numero}`, rightX, 24, { align: 'right' });
 
     // Badge de estado
@@ -337,25 +337,28 @@ export const generarPresupuestoPDF = async (presupuesto, clinica) => {
     }
 
     // ══════════════════════════════════════════════════════════════════════════
-    // FOOTER DENTALCOR
+    // FOOTER DENTALCOR — blanco para impresoras B&N
     // ══════════════════════════════════════════════════════════════════════════
     const pageH  = 297;
     const footY  = pageH - 18;
 
-    // Fondo footer
-    fill(doc, C.dark); doc.rect(0, footY, W, 18, 'F');
+    // Fondo footer blanco
+    fill(doc, C.white); doc.rect(0, footY, W, 18, 'F');
     // Línea superior azul
     fill(doc, C.primary); doc.rect(0, footY, W, 1.5, 'F');
+    // Línea inferior gris
+    stroke(doc, C.slate300); doc.setLineWidth(0.3);
+    doc.line(0, footY, W, footY);
 
     // Texto izquierdo
-    font(doc, 7); color(doc, [100, 140, 170]);
+    font(doc, 7); color(doc, C.slate700);
     doc.text('Documento no válido como factura.', mg, footY + 7);
     doc.text('Los precios pueden variar. Consulte con su profesional.', mg, footY + 13);
 
     // Branding derecho
     font(doc, 8, 'bold'); color(doc, C.primary);
     doc.text('DentalCorSoftware.com.ar', W - mg, footY + 7, { align: 'right' });
-    font(doc, 6.5); color(doc, [100, 140, 170]);
+    font(doc, 6.5); color(doc, C.slate700);
     doc.text('Presupuesto generado por el sistema DentalCor', W - mg, footY + 13, { align: 'right' });
 
     // ── Guardar ───────────────────────────────────────────────────────────────

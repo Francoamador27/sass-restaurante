@@ -13,6 +13,7 @@ import Precios from "./components/Precios";
 import Ejemplos from "./components/Ejemplos";
 import ServiciosFront from "./components/ServiciosFront";
 import ServiciosShow from "./components/Servicios/ServiciosShow";
+import PaginasWeb from "./components/PaginasWeb";
 
 // Admin Dash
 import AdminLayout from "./layout/AdminLayout";
@@ -55,9 +56,10 @@ const router = createBrowserRouter([
       { path: "/quienes-somos", element: <QuienesSomos /> },
       { path: "/precios", element: <Precios /> },
       { path: "/ejemplos", element: <Ejemplos /> },
+      { path: "/paginas-web", element: <PaginasWeb /> },
       { path: "auth/login", element: <Login /> },
       { path: "auth/reset-password", element: <ResetPassword /> },
-      { path: "auth/register", element: <Register /> },
+      // { path: "auth/register", element: <Register /> },
     ],
   },
   {
@@ -67,9 +69,7 @@ const router = createBrowserRouter([
   {
     path: "/mi-cuenta",
     element: <AuthLayout />,
-    children: [
-      { index: true, element: <MyAccount /> },
-    ],
+    children: [{ index: true, element: <MyAccount /> }],
   },
   {
     path: "/admin-dash",
@@ -80,7 +80,10 @@ const router = createBrowserRouter([
       { path: "/admin-dash/citas/:id", element: <Cita /> },
       { path: "/admin-dash/pacientes", element: <PacientesList /> },
       { path: "/admin-dash/pacientes/:id", element: <Paciente /> },
-      { path: "/admin-dash/pacientes/historial/:id", element: <HistorialPaciente /> },
+      {
+        path: "/admin-dash/pacientes/historial/:id",
+        element: <HistorialPaciente />,
+      },
       { path: "/admin-dash/doctores", element: <DoctoresList /> },
       { path: "/admin-dash/doctores/:id", element: <Doctor /> },
       { path: "/admin-dash/finanzas", element: <Finanzas /> },
@@ -94,14 +97,29 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <SuperAdminDash /> },
       { path: "/superadmin-dash/tenants", element: <TenantsList /> },
-      { path: "/superadmin-dash/tenants/:id/admin", element: <CreateAdminForTenant /> },
-      { path: "/superadmin-dash/testimonios", element: <SuperAdminTestimonios /> },
+      {
+        path: "/superadmin-dash/tenants/:id/admin",
+        element: <CreateAdminForTenant />,
+      },
+      {
+        path: "/superadmin-dash/testimonios",
+        element: <SuperAdminTestimonios />,
+      },
       { path: "/superadmin-dash/ejemplos", element: <SuperAdminEjemplos /> },
       { path: "/superadmin-dash/servicios", element: <SuperAdminServicios /> },
-      { path: "/superadmin-dash/servicios/editar/:id", element: <EditServicios /> },
+      {
+        path: "/superadmin-dash/servicios/editar/:id",
+        element: <EditServicios />,
+      },
       { path: "/superadmin-dash/chatbot", element: <SuperAdminChatbot /> },
-      { path: "/superadmin-dash/mail-config", element: <SuperAdminMailConfig /> },
-      { path: "/superadmin-dash/configuraciones", element: <SuperAdminConfiguraciones /> },
+      {
+        path: "/superadmin-dash/mail-config",
+        element: <SuperAdminMailConfig />,
+      },
+      {
+        path: "/superadmin-dash/configuraciones",
+        element: <SuperAdminConfiguraciones />,
+      },
       { path: "/superadmin-dash/usuarios", element: <UsuariosList /> },
     ],
   },

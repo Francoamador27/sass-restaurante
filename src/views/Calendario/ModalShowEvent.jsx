@@ -147,7 +147,6 @@ export default function ModalShowEvent({
     if (!date || !time24) return alert("Completá fecha y hora");
     const dur = parseInt(duration, 10);
     if (!dur || dur < 15) return alert("La duración mínima es 15 minutos");
-    if (!amount || Number(amount) <= 0) return alert("Ingresá un monto válido");
     if (!selectedDoctor?.id) return alert("Seleccioná un doctor");
 
     try {
@@ -272,41 +271,50 @@ export default function ModalShowEvent({
             maxHeight: "calc(90vh - 160px)",
           }}
         >
-          {/* Fecha / Hora (LOCAL con AM/PM) */}
-          <section>
-            <h4
-              style={{
-                color: "#374151",
-                fontSize: 16,
-                fontWeight: 600,
-                padding: "12px 24px",
-              }}
-            >
-              Datos del Paciente
-            </h4>
-            <div
-              style={{ padding: "0 24px 12px", color: "#6b7280", fontSize: 14 }}
-            >
-              <div>
-                <strong>Nombre:</strong> {datos?.patient_name || "—"}{" "}
-                {datos?.patient_lastname || "—"}
+          {/* Datos del Paciente + Sincronizar calendario */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+            <section>
+              <h4
+                style={{
+                  color: "#374151",
+                  fontSize: 16,
+                  fontWeight: 600,
+                  padding: "12px 24px",
+                }}
+              >
+                Datos del Paciente
+              </h4>
+              <div
+                style={{ padding: "0 24px 12px", color: "#6b7280", fontSize: 14 }}
+              >
+                <div>
+                  <strong>Nombre:</strong> {datos?.patient_name || "—"}{" "}
+                  {datos?.patient_lastname || "—"}
+                </div>
+                <NotificacionWhatsapp datos={datos} date={date} hora={hora} />
+                <div>
+                  <strong>Email:</strong>{" "}
+                  {datos?.patient_email ? (
+                    <a
+                      href={`mailto:${datos.patient_email}`}
+                      style={{ color: "#0ea5e9", textDecoration: "underline" }}
+                    >
+                      {datos.patient_email}
+                    </a>
+                  ) : (
+                    "—"
+                  )}
+                </div>
               </div>
-              <NotificacionWhatsapp datos={datos} date={date} hora={hora} />
-              <div>
-                <strong>Email:</strong>{" "}
-                {datos?.patient_email ? (
-                  <a
-                    href={`mailto:${datos.patient_email}`}
-                    style={{ color: "#0ea5e9", textDecoration: "underline" }}
-                  >
-                    {datos.patient_email}
-                  </a>
-                ) : (
-                  "—"
-                )}
-              </div>
-            </div>
-          </section>
+            </section>
+
+            {/* Panel de sincronización inline */}
+            <CalendarSyncDropdown
+              selected={selected}
+              currentPayload={currentPayload}
+              inline
+            />
+          </div>
           <div
             style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}
           >
@@ -421,10 +429,6 @@ export default function ModalShowEvent({
             >
               🗑 Eliminar
             </button>
-            <CalendarSyncDropdown
-              selected={selected}
-              currentPayload={currentPayload}
-            />
           </div>
           <div style={{ display: "flex", gap: 10 }}>
             <Link
@@ -475,8 +479,8 @@ const inputStyle = {
   outline: "none",
 };
 
-/* ── Dropdown "Sincronizar calendario" ──────────────────────────────────── */
-function CalendarSyncDropdown({ selected, currentPayload }) {
+/* ── Dropdown / Panel "Sincronizar calendario" ───────────────────────────── */
+function CalendarSyncDropdown({ selected, currentPayload, inline = false }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -491,11 +495,12 @@ function CalendarSyncDropdown({ selected, currentPayload }) {
   const xp = selected?.extendedProps || {};
 
   // Formatear fecha LOCAL para Google Calendar (YYYYMMDDTHHmmss sin Z)
+  // Usa getters UTC porque startISO almacena la hora local como si fuera UTC (convención del sistema)
   const toGCalDate = (iso) => {
     if (!iso) return "";
     const d = new Date(iso);
     const pad = (n) => String(n).padStart(2, "0");
-    return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+    return `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}${pad(d.getUTCSeconds())}`;
   };
 
   const buildGoogleUrl = () => {
@@ -529,8 +534,15 @@ function CalendarSyncDropdown({ selected, currentPayload }) {
     const body = encodeURIComponent(
       `Turno con Dr. ${doctorName || "—"}. Paciente: ${xp.patient_name || ""} ${xp.patient_lastname || ""}`.trim(),
     );
-    const s = new Date(start).toISOString();
-    const e = new Date(end).toISOString();
+    // Extraer los valores UTC como datetime local sin sufijo Z para que Outlook
+    // no interprete los tiempos como UTC (misma convención que el resto del sistema)
+    const fmtOutlook = (iso) => {
+      const d = new Date(iso);
+      const pad = (n) => String(n).padStart(2, "0");
+      return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}T${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())}`;
+    };
+    const s = fmtOutlook(start);
+    const e = fmtOutlook(end);
 
     return `https://outlook.live.com/calendar/0/action/compose?subject=${title}&startdt=${s}&enddt=${e}&body=${body}`;
   };
@@ -636,6 +648,59 @@ function CalendarSyncDropdown({ selected, currentPayload }) {
       onClick: handleDownloadIcs,
     },
   ];
+
+  // Modo panel: opciones siempre visibles, sin botón trigger
+  if (inline) {
+    return (
+      <div style={{
+        background: "#f9fafb",
+        border: "1px solid #e5e7eb",
+        borderRadius: 12,
+        padding: "12px 14px",
+        alignSelf: "start",
+        marginTop: 8,
+      }}>
+        <p style={{
+          margin: "0 0 8px",
+          fontSize: 11,
+          color: "#9ca3af",
+          fontWeight: 600,
+          textTransform: "uppercase",
+          letterSpacing: 0.5,
+        }}>
+          Agregar a calendario
+        </p>
+        {menuItems.map((item, i) => (
+          <button
+            key={i}
+            onClick={item.onClick}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              width: "100%",
+              padding: "8px 10px",
+              border: "none",
+              background: "transparent",
+              cursor: "pointer",
+              fontSize: 13,
+              color: "#374151",
+              textAlign: "left",
+              borderRadius: 8,
+              transition: "background 0.15s",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "#f0f0f0")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+          >
+            <span style={{ display: "flex", alignItems: "center", width: 16, justifyContent: "center" }}>
+              {item.icon}
+            </span>
+            {item.label}
+          </button>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div ref={ref} style={{ position: "relative" }}>

@@ -388,7 +388,6 @@ export default function ModalCreateEvent({ dateStr, dateObj, onCreate, onClose, 
 
     const durMin = parseInt(duration, 10);
     if (!durMin || durMin < 15) return alert("La duración mínima es 15 minutos");
-    if (!amount || Number(amount) <= 0) return alert("Por favor ingresa un monto válido");
 
     const [hours, minutes] = time.split(":").map(Number);
     if (isNaN(hours) || isNaN(minutes)) return alert("Formato de hora inválido");
@@ -410,7 +409,7 @@ export default function ModalCreateEvent({ dateStr, dateObj, onCreate, onClose, 
       userId: selectedPatient.id,
       userName: selectedPatient.name,
       // datos de cobranza
-      amount: Number(amount),
+      amount: amount ? Number(amount) : null,
       isPaid
     };
 
@@ -423,9 +422,7 @@ export default function ModalCreateEvent({ dateStr, dateObj, onCreate, onClose, 
     !isNaN(parseInt(duration, 10)) &&
     parseInt(duration, 10) >= 15 &&
     selectedPatient &&
-    selectedDoctor &&
-    amount &&
-    Number(amount) > 0;
+    selectedDoctor;
 
   return (
     <div

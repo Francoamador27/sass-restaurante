@@ -6,7 +6,10 @@
       "Bash(php artisan tinker --execute=\":*)",
       "Bash(xargs grep:*)",
       "Bash(npm install:*)",
-      "Read(//c/Users/Franco/.claude/projects/c--Users-Franco-Desktop-PROYECTOS-PERSONALES-DentalCoreSoftware-DentalCorsoftware/memory/**)"
+      "Read(//c/Users/Franco/.claude/projects/c--Users-Franco-Desktop-PROYECTOS-PERSONALES-DentalCoreSoftware-DentalCorsoftware/memory/**)",
+      "Bash(findstr /i \"MAIL_HOST MAIL_PORT MAIL_USERNAME MAIL_PASSWORD MAIL_ENCRYPTION\" \"c:\\\\laragon\\\\www\\\\back-dentalcorsoftware\\\\.env\")",
+      "Bash(Select-String -Path \"c:\\\\laragon\\\\www\\\\back-dentalcorsoftware\\\\.env\" -Pattern \"MAIL_\")",
+      "Bash(Get-ChildItem -Path \"c:\\\\laragon\\\\www\\\\back-dentalcorsoftware\\\\app\\\\Models\\\\\" -Filter \"*.php\" | Select-Object Name)"
     ],
     "additionalDirectories": [
       "c:\\laragon\\www\\back-dentalcorsoftware\\app"

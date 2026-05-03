@@ -109,6 +109,26 @@ const Paciente = () => {
     }));
   }, []);
 
+  // Lógica compartida de llamada a la API
+  const doCreate = useCallback(async (payload) => {
+    setSaving(true);
+    setErrMsg("");
+    try {
+      await clienteAxios.post(`/api/pacientes`, payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      mostrarExito("Paciente agregado correctamente");
+      navigate("/admin-dash/pacientes");
+    } catch (error) {
+      console.error(error);
+      const firstError =
+        error?.response?.data?.errors &&
+        Object.values(error.response.data.errors)[0]?.[0];
+      setErrMsg(firstError || "Error al crear el paciente.");
+      setSaving(false);
+    }
+  }, [token, navigate]);
+
   // Envío
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -121,64 +141,47 @@ const Paciente = () => {
       return mostrarError("La contraseña es obligatoria y debe tener al menos 6 caracteres.");
     }
 
+    const patientPayload = {
+      nompa: paciente.nompa?.trim(),
+      apepa: paciente.apepa || null,
+      direc: paciente.direc || null,
+      sex: paciente.sex || null,
+      grup: paciente.grup || null,
+      phon: paciente.phon || null,
+      cump: paciente.cump ? toYMD(paciente.cump) : null,
+      state: paciente.state ?? 1,
+    };
+
+    const userPayload = {
+      email: paciente.email?.trim() || null,
+      dni: paciente.dni || null,
+      codigo_postal: paciente.codigo_postal || null,
+      provincia: paciente.provincia || null,
+      rol: Number(paciente.rol ?? 3),
+      ...(isCreating
+        ? { password: paciente.password }
+        : (paciente.password?.trim() ? { password: paciente.password } : {})),
+    };
+
+    if (isCreating) {
+      const payload = { ...patientPayload, ...userPayload, ...(importMeta ?? {}) };
+      return doCreate(payload);
+    }
+
     setSaving(true);
     setErrMsg("");
-
     try {
-      // -------- patients (tabla patients)
-      const patientPayload = {
-     
-        nompa: paciente.nompa?.trim(),
-        apepa: paciente.apepa || null,
-        direc: paciente.direc || null,
-        sex: paciente.sex || null,
-        grup: paciente.grup || null,
-        phon: paciente.phon || null,
-        cump: paciente.cump ? toYMD(paciente.cump) : null,
-        state: paciente.state ?? 1,
-      };
-
-      // -------- users (tabla users)
-      const userPayload = {
-        email: paciente.email?.trim() || null,
-        dni: paciente.dni || null,
-        codigo_postal: paciente.codigo_postal || null,
-        provincia: paciente.provincia || null,
-        rol: Number(paciente.rol ?? 3),
-        ...(isCreating
-          ? { password: paciente.password }
-          : (paciente.password?.trim() ? { password: paciente.password } : {})),
-      };
-
-      // 👉 Unificar en un solo payload
-      const payload = {
-        ...patientPayload,
-        ...userPayload,
-        // Incluir metadatos de importación si aplica
-        ...(importMeta ?? {}),
-      };
-
-      // Si tu backend espera objetos separados, usa en su lugar:
-      // const payload = { patient: patientPayload, user: userPayload };
-
-      if (isCreating) {
-        await clienteAxios.post(`/api/pacientes`, payload, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        mostrarExito("Paciente creado correctamente");
-      } else {
-        await clienteAxios.put(`/api/pacientes/${id}`, payload, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        mostrarExito("Paciente actualizado correctamente");
-      }
+      await clienteAxios.put(`/api/pacientes/${id}`, { ...patientPayload, ...userPayload }, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      mostrarExito("Paciente actualizado correctamente");
       navigate("/admin-dash/pacientes");
     } catch (error) {
       console.error(error);
       const firstError =
         error?.response?.data?.errors &&
         Object.values(error.response.data.errors)[0]?.[0];
-      setErrMsg(firstError || `Error al ${isCreating ? "crear" : "actualizar"} el paciente.`);
+      setErrMsg(firstError || "Error al actualizar el paciente.");
     } finally {
       setSaving(false);
     }
@@ -441,6 +444,7 @@ const Paciente = () => {
                 </div>
 
                 {/* Password (solo creación o si se rellena) */}
+                {!importMeta && (
                 <div className={`${isCreating ? "" : "md:col-span-2"}`}>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Contraseña {isCreating && <span className="text-red-500">*</span>}
@@ -456,6 +460,7 @@ const Paciente = () => {
                     required={isCreating}
                   />
                 </div>
+                )}
               </div>
             </div>
 
@@ -545,25 +550,23 @@ const Paciente = () => {
       <PatientImportModal
         foundData={foundData}
         onConfirm={(data) => {
-          // Pre-llenar el formulario con los datos del modal
-          setPaciente(prev => ({
-            ...prev,
-            nompa: data.nompa  || prev.nompa,
-            apepa: data.apepa  || prev.apepa,
-            email: data.email  || prev.email,
-            dni:   data.dni    || prev.dni,
-            phon:  data.phon   || prev.phon,
-            direc: data.direc  || prev.direc,
-            sex:   data.sex    || prev.sex,
-            cump:  data.cump   || prev.cump,
-            grup:  data.grup   || prev.grup,
-          }));
-          // Guardar metadatos para el payload del POST
-          setImportMeta({
+          resetLookup();
+          // Construir y enviar el payload directamente — sin requerir acción adicional del usuario
+          doCreate({
+            nompa:             data.nompa?.trim(),
+            apepa:             data.apepa   || null,
+            email:             data.email?.trim(),
+            dni:               data.dni     || null,
+            phon:              data.phon    || null,
+            direc:             data.direc   || null,
+            sex:               data.sex     || null,
+            cump:              data.cump    ? toYMD(data.cump) : null,
+            grup:              data.grup    || null,
+            state:             1,
+            rol:               3,
             import_user_id:    data.import_user_id,
             source_patient_id: data.source_patient_id,
           });
-          resetLookup();
         }}
         onClose={() => resetLookup()}
       />

@@ -5,6 +5,7 @@ import PacientePicker from './PacientePicker';
 
 const ESTADOS = [
     { value: 'borrador',  label: 'Borrador' },
+    { value: 'publicado', label: 'Publicado' },
     { value: 'enviado',   label: 'Enviado' },
     { value: 'aceptado',  label: 'Aceptado' },
     { value: 'rechazado', label: 'Rechazado' },
@@ -21,7 +22,7 @@ const PresupuestoForm = ({ onCreated }) => {
     const [form, setForm] = useState({
         fecha: today,
         valido_hasta: validez,
-        estado: 'borrador',
+        estado: 'publicado',
         paciente_nombre: '',
         paciente_email: '',
         paciente_telefono: '',
@@ -65,7 +66,7 @@ const PresupuestoForm = ({ onCreated }) => {
                 })),
             });
             setSuccess(`Presupuesto ${data.numero} creado correctamente.`);
-            setForm({ fecha: today, valido_hasta: validez, estado: 'borrador', paciente_nombre: '', paciente_email: '', paciente_telefono: '', paciente_dni: '', descuento: 0, notas: '' });
+            setForm({ fecha: today, valido_hasta: validez, estado: 'publicado', paciente_nombre: '', paciente_email: '', paciente_telefono: '', paciente_dni: '', descuento: 0, notas: '' });
             setItems([emptyItem()]);
             onCreated?.(data);
         } catch (err) {
