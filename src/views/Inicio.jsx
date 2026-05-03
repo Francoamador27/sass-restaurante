@@ -29,7 +29,7 @@ const Inicio = () => {
         <Contacto />
         <SEOHead
           priority="high" // ← ESTO ES LO IMPORTANTE
-          title={`${company.name} | El mejor software odontológico para tu clínica`}
+          title={`${company.name} | El mejor software odontológico para tu clínica en Argentina`}
         />
       </div>
     </>
