@@ -24,12 +24,6 @@ export default defineConfig({
             return "vendor-swiper";
           if (id.includes("@xyflow") || id.includes("reactflow"))
             return "vendor-flow";
-          if (
-            id.includes("/react/") ||
-            id.includes("/react-dom/") ||
-            id.includes("react-router")
-          )
-            return "vendor-react";
           return "vendor";
         },
       },
