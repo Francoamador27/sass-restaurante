@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /admin-dash
+Disallow: /superadmin-dash
+Disallow: /mi-cuenta
+Disallow: /select-tenant
+Disallow: /auth/
+
+Sitemap: https://dentalcorsoftware.com.ar/sitemap.xml
