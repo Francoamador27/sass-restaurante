@@ -93,25 +93,6 @@ Software odontológico multi-tenant para clínicas y consultorios dentales.
 
 ---
 
-## 9. Multi-tenant (múltiples clínicas)
-
-- Una sola instalación del sistema soporta múltiples clínicas
-- Cada clínica tiene sus propios datos, pacientes, agenda y configuración completamente aislados
-- Un mismo paciente puede estar en varias clínicas sin duplicar su cuenta
-- Portal del paciente para ver sus citas y documentos en todas las clínicas donde está registrado
-- Selector de clínica al iniciar sesión si el usuario pertenece a varias
-
----
-
-## 10. Control de Acceso y Roles
-
-- **SuperAdmin**: gestión completa del sistema y todas las clínicas
-- **Admin**: gestión total de su clínica (pacientes, citas, finanzas, presupuestos)
-- **Doctor**: acceso al calendario y pacientes asignados
-- **Paciente**: acceso a su historial, documentos y citas
-- Autenticación con tokens Sanctum (JWT)
-- Protección CAPTCHA en login, registro y contacto
-
 ---
 
 ## 14. Exportación y Reportes
