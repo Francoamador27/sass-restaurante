@@ -111,10 +111,11 @@ const Contacto = () => {
           <form ref={formRef} onSubmit={handleSubmit} className="space-y-5 relative z-10">
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-slate-700 font-semibold mb-1">
+                <label htmlFor="nombre" className="block text-slate-700 font-semibold mb-1">
                   Nombre completo
                 </label>
                 <input
+                  id="nombre"
                   type="text"
                   name="nombre"
                   required
@@ -122,10 +123,11 @@ const Contacto = () => {
                 />
               </div>
               <div>
-                <label className="block text-slate-700 font-semibold mb-1">
+                <label htmlFor="telefono" className="block text-slate-700 font-semibold mb-1">
                   Teléfono
                 </label>
                 <input
+                  id="telefono"
                   type="tel"
                   name="telefono"
                   required
@@ -135,10 +137,11 @@ const Contacto = () => {
             </div>
 
             <div>
-              <label className="block text-slate-700 font-semibold mb-1">
+              <label htmlFor="email" className="block text-slate-700 font-semibold mb-1">
                 Email
               </label>
               <input
+                id="email"
                 type="email"
                 name="email"
                 required
@@ -147,10 +150,11 @@ const Contacto = () => {
             </div>
 
             <div>
-              <label className="block text-slate-700 font-semibold mb-1">
+              <label htmlFor="mensaje" className="block text-slate-700 font-semibold mb-1">
                 Tu mensaje
               </label>
               <textarea
+                id="mensaje"
                 name="mensaje"
                 rows="5"
                 required

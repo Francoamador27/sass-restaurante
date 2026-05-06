@@ -1,131 +1,125 @@
+import { lazy, Suspense } from "react";
 import { createBrowserRouter } from "react-router-dom";
+
+// Layouts — thin wrappers, kept eager
 import Layout from "./layout/Layout";
-import Inicio from "./views/Inicio";
-import Login from "./views/Login";
-import Register from "./views/Register";
 import AuthLayout from "./layout/AuthLayout";
-import MyAccount from "./views/MyAccount";
-import NotFound from "./components/NotFound";
-import ResetPassword from "./views/ResetPassword";
-import Contacto from "./components/Contacto";
-import QuienesSomos from "./components/QuienesSomos";
-import Precios from "./components/Precios";
-import Ejemplos from "./components/Ejemplos";
-import ServiciosFront from "./components/ServiciosFront";
-import ServiciosShow from "./components/Servicios/ServiciosShow";
-import PaginasWeb from "./components/PaginasWeb";
-
-// Admin Dash
 import AdminLayout from "./layout/AdminLayout";
-import Calendario from "./views/Calendario/Calendario";
-import Cita from "./views/Citas/Cita";
-import CitasAdmin from "./views/Citas/CitasAdmin";
-import DoctoresList from "./views/Usuarios/DoctoresList";
-import Doctor from "./views/Usuarios/Doctor";
-import PacientesList from "./views/Usuarios/Pacientes/PacientesList";
-import Paciente from "./views/Usuarios/Pacientes/Paciente";
-import HistorialPaciente from "./views/Usuarios/Pacientes/HistorialPaciente";
-import Finanzas from "./components/Finanzas/Finanzas";
-import MiClinica from "./views/AdminDash/MiClinica/MiClinica";
-import Presupuestos from "./views/AdminDash/Presupuestos/Presupuestos";
-
-// SuperAdmin Dash
 import SuperAdminLayout from "./layout/SuperAdminLayout";
-import SuperAdminDash from "./views/SuperAdmin/SuperAdminDash";
-import TenantsList from "./views/SuperAdmin/Tenants/TenantsList";
-import CreateAdminForTenant from "./views/SuperAdmin/Tenants/CreateAdminForTenant";
-import SuperAdminTestimonios from "./views/SuperAdmin/Testimonios/SuperAdminTestimonios";
-import SuperAdminEjemplos from "./views/SuperAdmin/Ejemplos/SuperAdminEjemplos";
-import SuperAdminServicios from "./views/SuperAdmin/Servicios/SuperAdminServicios";
-import EditServicios from "./components/Servicios/EditServicios";
-import SuperAdminChatbot from "./views/SuperAdmin/Chatbot/SuperAdminChatbot";
-import SuperAdminMailConfig from "./views/SuperAdmin/MailConfig/SuperAdminMailConfig";
-import SuperAdminConfiguraciones from "./views/SuperAdmin/Configuraciones/SuperAdminConfiguraciones";
-import UsuariosList from "./views/SuperAdmin/Usuarios/UsuariosList";
-import TenantSelector from "./views/TenantSelector";
+
+// Landing routes
+const Inicio = lazy(() => import("./views/Inicio"));
+const Login = lazy(() => import("./views/Login"));
+const Register = lazy(() => import("./views/Register"));
+const MyAccount = lazy(() => import("./views/MyAccount"));
+const NotFound = lazy(() => import("./components/NotFound"));
+const ResetPassword = lazy(() => import("./views/ResetPassword"));
+const Contacto = lazy(() => import("./components/Contacto"));
+const QuienesSomos = lazy(() => import("./components/QuienesSomos"));
+const Precios = lazy(() => import("./components/Precios"));
+const Ejemplos = lazy(() => import("./components/Ejemplos"));
+const ServiciosFront = lazy(() => import("./components/ServiciosFront"));
+const ServiciosShow = lazy(() => import("./components/Servicios/ServiciosShow"));
+const PaginasWeb = lazy(() => import("./components/PaginasWeb"));
+const TenantSelector = lazy(() => import("./views/TenantSelector"));
+
+// Admin routes
+const Calendario = lazy(() => import("./views/Calendario/Calendario"));
+const Cita = lazy(() => import("./views/Citas/Cita"));
+const CitasAdmin = lazy(() => import("./views/Citas/CitasAdmin"));
+const DoctoresList = lazy(() => import("./views/Usuarios/DoctoresList"));
+const Doctor = lazy(() => import("./views/Usuarios/Doctor"));
+const PacientesList = lazy(() => import("./views/Usuarios/Pacientes/PacientesList"));
+const Paciente = lazy(() => import("./views/Usuarios/Pacientes/Paciente"));
+const HistorialPaciente = lazy(() => import("./views/Usuarios/Pacientes/HistorialPaciente"));
+const Finanzas = lazy(() => import("./components/Finanzas/Finanzas"));
+const MiClinica = lazy(() => import("./views/AdminDash/MiClinica/MiClinica"));
+const Presupuestos = lazy(() => import("./views/AdminDash/Presupuestos/Presupuestos"));
+
+// SuperAdmin routes
+const SuperAdminDash = lazy(() => import("./views/SuperAdmin/SuperAdminDash"));
+const TenantsList = lazy(() => import("./views/SuperAdmin/Tenants/TenantsList"));
+const CreateAdminForTenant = lazy(() => import("./views/SuperAdmin/Tenants/CreateAdminForTenant"));
+const SuperAdminTestimonios = lazy(() => import("./views/SuperAdmin/Testimonios/SuperAdminTestimonios"));
+const SuperAdminEjemplos = lazy(() => import("./views/SuperAdmin/Ejemplos/SuperAdminEjemplos"));
+const SuperAdminServicios = lazy(() => import("./views/SuperAdmin/Servicios/SuperAdminServicios"));
+const EditServicios = lazy(() => import("./components/Servicios/EditServicios"));
+const SuperAdminChatbot = lazy(() => import("./views/SuperAdmin/Chatbot/SuperAdminChatbot"));
+const SuperAdminMailConfig = lazy(() => import("./views/SuperAdmin/MailConfig/SuperAdminMailConfig"));
+const SuperAdminConfiguraciones = lazy(() => import("./views/SuperAdmin/Configuraciones/SuperAdminConfiguraciones"));
+const UsuariosList = lazy(() => import("./views/SuperAdmin/Usuarios/UsuariosList"));
+
+const Spinner = () => (
+  <div className="flex items-center justify-center min-h-[60vh]">
+    <div className="w-8 h-8 border-4 border-[#008DD2] border-t-transparent rounded-full animate-spin" />
+  </div>
+);
+
+const s = (el) => <Suspense fallback={<Spinner />}>{el}</Suspense>;
 
 const router = createBrowserRouter([
   {
     path: "/",
     element: <Layout />,
     children: [
-      { index: true, element: <Inicio /> },
-      { path: "/servicios", element: <ServiciosFront /> },
-      { path: "/servicios/:id", element: <ServiciosShow /> },
-      { path: "/contacto", element: <Contacto /> },
-      { path: "/quienes-somos", element: <QuienesSomos /> },
-      { path: "/precios", element: <Precios /> },
-      { path: "/ejemplos", element: <Ejemplos /> },
-      { path: "/paginas-web", element: <PaginasWeb /> },
-      { path: "auth/login", element: <Login /> },
-      { path: "auth/reset-password", element: <ResetPassword /> },
-      // { path: "auth/register", element: <Register /> },
+      { index: true, element: s(<Inicio />) },
+      { path: "/servicios", element: s(<ServiciosFront />) },
+      { path: "/servicios/:id", element: s(<ServiciosShow />) },
+      { path: "/contacto", element: s(<Contacto />) },
+      { path: "/quienes-somos", element: s(<QuienesSomos />) },
+      { path: "/precios", element: s(<Precios />) },
+      { path: "/ejemplos", element: s(<Ejemplos />) },
+      { path: "/paginas-web", element: s(<PaginasWeb />) },
+      { path: "auth/login", element: s(<Login />) },
+      { path: "auth/reset-password", element: s(<ResetPassword />) },
     ],
   },
   {
     path: "/select-tenant",
-    element: <TenantSelector />,
+    element: s(<TenantSelector />),
   },
   {
     path: "/mi-cuenta",
     element: <AuthLayout />,
-    children: [{ index: true, element: <MyAccount /> }],
+    children: [{ index: true, element: s(<MyAccount />) }],
   },
   {
     path: "/admin-dash",
     element: <AdminLayout />,
     children: [
-      { index: true, element: <Calendario /> },
-      { path: "/admin-dash/citas", element: <CitasAdmin /> },
-      { path: "/admin-dash/citas/:id", element: <Cita /> },
-      { path: "/admin-dash/pacientes", element: <PacientesList /> },
-      { path: "/admin-dash/pacientes/:id", element: <Paciente /> },
-      {
-        path: "/admin-dash/pacientes/historial/:id",
-        element: <HistorialPaciente />,
-      },
-      { path: "/admin-dash/doctores", element: <DoctoresList /> },
-      { path: "/admin-dash/doctores/:id", element: <Doctor /> },
-      { path: "/admin-dash/finanzas", element: <Finanzas /> },
-      { path: "/admin-dash/configuraciones", element: <MiClinica /> },
-      { path: "/admin-dash/presupuestos", element: <Presupuestos /> },
+      { index: true, element: s(<Calendario />) },
+      { path: "/admin-dash/citas", element: s(<CitasAdmin />) },
+      { path: "/admin-dash/citas/:id", element: s(<Cita />) },
+      { path: "/admin-dash/pacientes", element: s(<PacientesList />) },
+      { path: "/admin-dash/pacientes/:id", element: s(<Paciente />) },
+      { path: "/admin-dash/pacientes/historial/:id", element: s(<HistorialPaciente />) },
+      { path: "/admin-dash/doctores", element: s(<DoctoresList />) },
+      { path: "/admin-dash/doctores/:id", element: s(<Doctor />) },
+      { path: "/admin-dash/finanzas", element: s(<Finanzas />) },
+      { path: "/admin-dash/configuraciones", element: s(<MiClinica />) },
+      { path: "/admin-dash/presupuestos", element: s(<Presupuestos />) },
     ],
   },
   {
     path: "/superadmin-dash",
     element: <SuperAdminLayout />,
     children: [
-      { index: true, element: <SuperAdminDash /> },
-      { path: "/superadmin-dash/tenants", element: <TenantsList /> },
-      {
-        path: "/superadmin-dash/tenants/:id/admin",
-        element: <CreateAdminForTenant />,
-      },
-      {
-        path: "/superadmin-dash/testimonios",
-        element: <SuperAdminTestimonios />,
-      },
-      { path: "/superadmin-dash/ejemplos", element: <SuperAdminEjemplos /> },
-      { path: "/superadmin-dash/servicios", element: <SuperAdminServicios /> },
-      {
-        path: "/superadmin-dash/servicios/editar/:id",
-        element: <EditServicios />,
-      },
-      { path: "/superadmin-dash/chatbot", element: <SuperAdminChatbot /> },
-      {
-        path: "/superadmin-dash/mail-config",
-        element: <SuperAdminMailConfig />,
-      },
-      {
-        path: "/superadmin-dash/configuraciones",
-        element: <SuperAdminConfiguraciones />,
-      },
-      { path: "/superadmin-dash/usuarios", element: <UsuariosList /> },
+      { index: true, element: s(<SuperAdminDash />) },
+      { path: "/superadmin-dash/tenants", element: s(<TenantsList />) },
+      { path: "/superadmin-dash/tenants/:id/admin", element: s(<CreateAdminForTenant />) },
+      { path: "/superadmin-dash/testimonios", element: s(<SuperAdminTestimonios />) },
+      { path: "/superadmin-dash/ejemplos", element: s(<SuperAdminEjemplos />) },
+      { path: "/superadmin-dash/servicios", element: s(<SuperAdminServicios />) },
+      { path: "/superadmin-dash/servicios/editar/:id", element: s(<EditServicios />) },
+      { path: "/superadmin-dash/chatbot", element: s(<SuperAdminChatbot />) },
+      { path: "/superadmin-dash/mail-config", element: s(<SuperAdminMailConfig />) },
+      { path: "/superadmin-dash/configuraciones", element: s(<SuperAdminConfiguraciones />) },
+      { path: "/superadmin-dash/usuarios", element: s(<UsuariosList />) },
     ],
   },
   {
     path: "*",
-    element: <NotFound />,
+    element: s(<NotFound />),
   },
 ]);
 

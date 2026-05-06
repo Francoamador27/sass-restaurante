@@ -34,8 +34,9 @@ export default function Footer() {
                 href={social.facebook}
                 target="_blank"
                 rel="noopener noreferrer"
+                aria-label="Seguinos en Facebook"
               >
-                <FaFacebook className="text-2xl" />
+                <FaFacebook className="text-2xl" aria-hidden="true" />
               </a>
             )}
             {social.instagram && (
@@ -43,8 +44,9 @@ export default function Footer() {
                 href={social.instagram}
                 target="_blank"
                 rel="noopener noreferrer"
+                aria-label="Seguinos en Instagram"
               >
-                <FaInstagram className="text-2xl" />
+                <FaInstagram className="text-2xl" aria-hidden="true" />
               </a>
             )}
           </div>

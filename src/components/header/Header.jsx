@@ -236,6 +236,9 @@ export default function Header() {
             {/* Mobile Menu Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label={mobileMenuOpen ? "Cerrar menú de navegación" : "Abrir menú de navegación"}
+              aria-expanded={mobileMenuOpen}
+              aria-controls="mobile-menu"
               className={`lg:hidden p-2.5 rounded-xl transition-all ${
                 scrolled
                   ? "bg-slate-100 hover:bg-slate-200 text-slate-900"
@@ -252,7 +255,7 @@ export default function Header() {
 
           {/* Mobile Menu */}
           {mobileMenuOpen && (
-            <div className="lg:hidden py-6 border-t border-white/10 animate-slideDown">
+            <div id="mobile-menu" className="lg:hidden py-6 border-t border-white/10 animate-slideDown">
               <ul className="space-y-2 mb-6">
                 {navItems.map((item, index) => (
                   <li key={index}>

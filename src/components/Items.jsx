@@ -1,3 +1,46 @@
+import { useState } from 'react';
+
+function YouTubeFacade({ videoId, title }) {
+  const [active, setActive] = useState(false);
+
+  if (active) {
+    return (
+      <iframe
+        className="w-full h-full"
+        src={`https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&autoplay=1&controls=1&showinfo=0`}
+        title={title}
+        frameBorder="0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        allowFullScreen
+      />
+    );
+  }
+
+  return (
+    <button
+      className="relative w-full h-full block cursor-pointer"
+      onClick={() => setActive(true)}
+      aria-label={`Reproducir ${title}`}
+    >
+      <img
+        src={`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`}
+        alt={title}
+        className="w-full h-full object-cover"
+        loading="lazy"
+        width="1280"
+        height="720"
+      />
+      <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+        <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center shadow-lg hover:bg-red-700 transition-colors">
+          <svg className="w-7 h-7 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M8 5v14l11-7z" />
+          </svg>
+        </div>
+      </div>
+    </button>
+  );
+}
+
 export default function QuienesSomos() {
   return (
     <section id="quienes-somos" className="bg-white">
@@ -17,13 +60,9 @@ export default function QuienesSomos() {
         {/* Izquierda: Video institucional + texto SEO */}
         <div className="flex flex-col gap-4">
           <div className="rounded-2xl overflow-hidden border border-gray-200 shadow-md bg-gray-50 aspect-video">
-            <iframe
-              className="w-full h-full"
-              src="https://www.youtube.com/embed/SGRWxeaIbPw?rel=0&modestbranding=1&autoplay=0&controls=1&showinfo=0"
+            <YouTubeFacade
+              videoId="SGRWxeaIbPw"
               title="Video institucional DentalCor"
-              frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              allowFullScreen
             />
           </div>
 
