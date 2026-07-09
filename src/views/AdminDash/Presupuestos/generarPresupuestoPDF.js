@@ -65,11 +65,16 @@ const truncate = (doc, text, maxW) => {
 };
 
 // ── Cargar el logo de la clínica a base64, vía la API (evita problemas de CORS
-// con el archivo estático) ──────────────────────────────────────────────────
-async function loadClinicLogo() {
+// con el archivo estático). Se manda el path del logo (tiene un UUID único
+// por clínica/subida) como query param "v" para que la URL sea distinta por
+// cada logo real — así ningún cache (navegador o CDN delante del backend)
+// puede devolver el logo de otra clínica ni uno viejo tras resubirlo.
+// ──────────────────────────────────────────────────────────────────────────
+async function loadClinicLogo(logoPath) {
     try {
         const { data: blob } = await clienteAxios.get('/api/tenant-settings/logo', {
             responseType: 'blob',
+            params: { v: logoPath },
         });
         return await new Promise((resolve) => {
             const reader = new FileReader();
@@ -88,7 +93,7 @@ export const generarPresupuestoPDF = async (presupuesto, clinica) => {
     const cw   = W - mg * 2;  // ancho contenido
 
     // Precargar logo (solo si hay uno configurado)
-    const logoImg = clinica?.logo ? await loadClinicLogo() : null;
+    const logoImg = clinica?.logo ? await loadClinicLogo(clinica.logo) : null;
 
     // ══════════════════════════════════════════════════════════════════════════
     // HEADER — fondo blanco para impresoras B&N
