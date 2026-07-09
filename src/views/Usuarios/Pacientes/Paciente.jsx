@@ -135,9 +135,10 @@ const Paciente = () => {
         }));
 
         // Si la obra social del paciente no está en la lista actual (poco común), la agregamos
-        if (data.obraSocial && data.obraSocial.id) {
+        // (Laravel serializa la relación obraSocial() como "obra_social")
+        if (data.obra_social && data.obra_social.id) {
           setObrasSociales((prev) =>
-            prev.some((o) => o.id === data.obraSocial.id) ? prev : [...prev, data.obraSocial]
+            prev.some((o) => o.id === data.obra_social.id) ? prev : [...prev, data.obra_social]
           );
         }
         setCarnetUrlActual(data.carnet_url ?? "");
